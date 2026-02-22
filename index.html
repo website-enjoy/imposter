@@ -569,14 +569,15 @@
             position: fixed;
             top: env(safe-area-inset-top, 20px);
             right: 20px;
-            width: 44px;
             height: 44px;
-            border-radius: 50%;
+            padding: 0 16px;
+            border-radius: 22px;
             background: rgba(22, 28, 45, 0.8);
             backdrop-filter: blur(8px);
             border: 1px solid var(--border);
             color: var(--text);
-            font-size: 1.2rem;
+            font-size: 1rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -744,7 +745,6 @@
             </div>
 
             <button class="btn-main btn-primary" id="start-btn">ابدأ اللعبة</button>
-            <button class="btn-main btn-ghost" id="fullscreen-btn" style="margin-top: 8px;">ملء الشاشة</button>
         </div>
 
         <!-- Pass Phone Screen -->
@@ -1602,16 +1602,6 @@
             playSfx('click');
             vibrate(100);
             initGame();
-        });
-
-        document.getElementById('fullscreen-btn').addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Fullscreen error: ${err.message}`);
-                });
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-            }
         });
 
         // Pass Phone Screen
