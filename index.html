@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>لعبة المحتال | Imposter Game</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --secondary-light: #f472b6;
+            --bg: #0b0f1a;
+            --surface: #161c2d;
+            --surface-hover: #1e293b;
+            --text: #ffffff;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --radius-xl: 32px;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            height: -webkit-fill-available;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+            line-height: 1.5;
+        }
+
+        html {
+            height: -webkit-fill-available;
+            overscroll-behavior: none;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            max-width: 450px;
+            position: relative;
+            background:
+                radial-gradient(circle at -20% -20%, rgba(99, 102, 241, 0.15), transparent 50%),
+                radial-gradient(circle at 120% 120%, rgba(236, 72, 153, 0.1), transparent 50%);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            padding: calc(var(--safe-top) + 24px) 24px calc(var(--safe-bottom) + 24px);
+            opacity: 0;
+            transform: scale(0.98) translateY(10px);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1;
+        }
+
+        .screen.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            z-index: 2;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .card-group {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .number-badge {
+            width: 44px;
+            height: 44px;
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary-light);
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: var(--surface-hover);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border: 3px solid var(--surface);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .chip-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .chip-grid.categories {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .chip {
+            background: var(--surface-hover);
+            padding: 14px 8px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .chip.active {
+            background: var(--primary);
+            border-color: var(--primary-light);
+            color: white;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-main {
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            font-size: 1.25rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            margin-top: auto;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            padding: 16px;
+        }
+
+        .player-indicator {
+            width: 120px;
+            height: 120px;
+            background: var(--surface);
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--primary-light);
+            margin: 32px auto;
+            position: relative;
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
+        }
+
+        .role-reveal-box {
+            width: 100%;
+            height: 340px;
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .role-reveal-box.revealed {
+            background: radial-gradient(circle at center, var(--surface-hover), var(--surface));
+        }
+
+        .word-anim {
+            font-size: 3rem;
+            font-weight: 950;
+            text-align: center;
+            animation: popIn 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8) translateY(20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .results-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+
+        .res-item {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-right: 4px solid transparent;
+        }
+
+        .res-item.imposter {
+            border-right-color: var(--secondary);
+            background: rgba(236, 72, 153, 0.05);
+        }
+
+        .p-num {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .p-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .p-wrd {
+            font-weight: 800;
+            color: var(--primary-light);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Animation for shake */
+        .shake {
+            animation: shakeEffect 0.5s ease-in-out;
+        }
+
+        @keyframes shakeEffect {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-5px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        /* New Game Mechanics Styles */
+        .toggle-row {
+            background: var(--surface-hover);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            appearance: none;
+            width: 48px;
+            height: 24px;
+            background: var(--surface);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toggle-switch:checked {
+            background: var(--primary);
+            border-color: var(--primary-light);
+        }
+
+        .toggle-switch:checked::after {
+            transform: translateX(24px);
+            background: white;
+        }
+
+        .blur-overlay {
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: rgba(22, 28, 45, 0.85);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .blur-overlay.unblurred {
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+            background: radial-gradient(circle at center, var(--surface-hover), var(--surface));
+        }
+
+        .role-word.imposter-text {
+            color: var(--secondary);
+        }
+
+        .role-word.spy-text {
+            color: var(--spy-color, #10b981);
+        }
+
+        .role-word.blind-text {
+            color: var(--blind-color, #64748b);
+        }
+
+        .voting-item {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .voting-item.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            transform: scale(1.02);
+        }
+
+        .voting-item .p-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-right: auto;
+        }
+
+        .voting-item .p-num {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-left: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Start Screen -->
+        <div id="screen-start" class="screen active">
+            <header>
+                <h1>المحتال</h1>
+                <p class="subtitle">لعبة ذكاء، خداع، وتحليل</p>
+            </header>
+
+            <div class="card-group">
+                <span class="section-label">عدد اللاعبين</span>
+                <div class="control-row">
+                    <input type="range" id="players-slider" min="3" max="15" value="4">
+                    <div id="players-value" class="number-badge">4</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">عدد المحتالين</span>
+                <div class="control-row">
+                    <input type="range" id="imposters-slider" min="1" max="3" value="1">
+                    <div id="imposters-value" class="number-badge">1</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">الأدوار الإضافية (عشوائي)</span>
+                <div class="role-toggles" style="display: flex; gap: 10px; flex-direction: column;">
+                    <label class="toggle-row">
+                        <span class="toggle-label"
+                            style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span>الجاسوس (Spy)</span>
+                            <input type="checkbox" id="spy-toggle" class="toggle-switch">
+                        </span>
+                    </label>
+                    <label class="toggle-row">
+                        <span class="toggle-label"
+                            style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span>الأعمى (Blind)</span>
+                            <input type="checkbox" id="blind-toggle" class="toggle-switch">
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">التصنيفات</span>
+                <div class="chip-grid categories" id="category-selector">
+                    <div class="chip active" data-cat="all">الكل</div>
+                    <div class="chip" data-cat="food">طعام</div>
+                    <div class="chip" data-cat="animals">حيوانات</div>
+                    <div class="chip" data-cat="objects">أدوات</div>
+                    <div class="chip" data-cat="sports">رياضة</div>
+                    <div class="chip" data-cat="funny">مضحك</div>
+                    <div class="chip" data-cat="body">جسم</div>
+                    <div class="chip" data-cat="places">مدن/دول</div>
+                    <div class="chip" data-cat="jobs">مهن</div>
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary" id="start-btn">ابدأ اللعبة</button>
+            <button class="btn-main btn-ghost" id="fullscreen-btn" style="margin-top: 8px;">ملء الشاشة</button>
+        </div>
+
+        <!-- Pass Phone Screen -->
+        <div id="screen-pass" class="screen">
+            <header>
+                <p class="subtitle">مرر الهاتف إلى</p>
+            </header>
+
+            <div class="player-indicator" id="current-player-display">1</div>
+            <p class="subtitle" style="margin-top: 0;">جاهز يا لاعب؟</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">تأكد أن لا أحد يرى الشاشة!</p>
+
+            <button class="btn-main btn-primary" id="im-ready-btn">أنا مستعد</button>
+        </div>
+
+        <!-- Reveal Screen -->
+        <div id="screen-reveal" class="screen">
+            <header>
+                <p class="subtitle" id="reveal-instruction">انقر واضغط مطولاً للكشف عن دورك</p>
+            </header>
+
+            <div class="role-reveal-box blur-overlay" id="reveal-card">
+                <div id="role-initial-text" class="word-anim" style="color: var(--text-muted); font-size: 1.5rem;">اضغط
+                    هنا للرؤية</div>
+                <div id="role-content" class="hidden text-center">
+                    <div id="role-category"
+                        style="color: var(--primary-light); font-weight: 800; font-size: 1.1rem; margin-bottom: 8px;">
+                    </div>
+                    <div id="role-title" style="color: var(--text-muted);">أنت</div>
+                    <div id="role-word" class="role-word word-anim">...</div>
+                    <div id="role-subtext"
+                        style="color: var(--text-muted); font-size: 0.9rem; margin-top: 12px; display: none;"></div>
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary hidden" id="done-reveal-btn">التالي</button>
+        </div>
+
+        <!-- Voting/Game Context Screen -->
+        <div id="screen-game" class="screen">
+            <header>
+                <h1>مرحلة النقاش</h1>
+                <p class="subtitle">من هو المحتال؟ تناقشوا الآن</p>
+            </header>
+
+            <div class="card-group text-center">
+                <span class="section-label">تلميح اللعبة</span>
+                <div id="game-word-hint" style="font-size: 2rem; font-weight: 950; color: var(--primary-light);">؟؟؟؟
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary" id="start-voting-btn">بدء التصويت</button>
+        </div>
+
+        <!-- Voting Screen -->
+        <div id="screen-voting" class="screen">
+            <header>
+                <h1>مرحلة التصويت</h1>
+                <p class="subtitle">صوّت للاعب الذي تعتقد أنه المحتال</p>
+            </header>
+
+            <div class="results-container" id="voting-list">
+                <!-- Players dynamic here -->
+            </div>
+
+            <button class="btn-main btn-primary hidden" id="confirm-vote-btn">تأكيد التصويت</button>
+        </div>
+
+        <!-- Voting Reveal Screen -->
+        <div id="screen-voting-reveal" class="screen">
+            <header>
+                <h1>نتيجة التصويت</h1>
+            </header>
+
+            <div class="card-group text-center" style="margin: 30px 0;">
+                <div id="voting-result-title" style="font-size: 2rem; font-weight: 900; margin-bottom: 10px;">...</div>
+                <div id="voting-result-text" style="color: var(--text-muted); font-size: 1.1rem;">...</div>
+            </div>
+
+            <button class="btn-main btn-primary" id="next-phase-btn">التالي</button>
+        </div>
+
+        <!-- Spy Guessing Screen -->
+        <div id="screen-spy-guess" class="screen">
+            <header>
+                <h1>مرحلة الجاسوس</h1>
+                <p class="subtitle">أيها الجاسوس، خمن الكلمة لتفوز!</p>
+            </header>
+
+            <div class="card-group">
+                <span class="section-label">اختر الكلمة الصحيحة</span>
+                <div class="chip-grid categories" id="spy-word-options">
+                    <!-- Options dynamic here -->
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary" id="spy-confirm-btn" disabled>تأكيد الاختيار</button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="screen-results" class="screen">
+            <header>
+                <h1 id="win-title">النتائج</h1>
+                <p class="subtitle" id="win-subtitle">...</p>
+            </header>
+
+            <div class="card-group" style="padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span class="section-label" style="margin:0;">الكلمة الأصلية</span>
+                        <div id="res-original-word"
+                            style="font-weight: 800; font-size: 1.2rem; color: var(--primary-light);">...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-container" id="results-list">
+                <!-- Results dynamic here -->
+            </div>
+
+            <button class="btn-main btn-primary" id="restart-btn">لعب مرة أخرى</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Word Database ---
+        const wordDatabase = [
+            // --- FOOD (الماكلة) ---
+            { cat: 'food', w1: 'كسكس', w2: 'شخشوخة' },
+            { cat: 'food', w1: 'مقرونة', w2: 'سباغيتي' },
+            { cat: 'food', w1: 'دوبارة', w2: 'لوبيا' },
+            { cat: 'food', w1: 'عدس', w2: 'حمص' },
+            { cat: 'food', w1: 'رفيس', w2: 'بغرير' },
+            { cat: 'food', w1: 'غريبة', w2: 'مقروط' },
+            { cat: 'food', w1: 'فلان', w2: 'ياوورت' },
+            { cat: 'food', w1: 'شاورما', w2: 'كباب' },
+            { cat: 'food', w1: 'بيتزا', w2: 'سندويش' },
+            { cat: 'food', w1: 'خبز', w2: 'مطلوع' },
+            { cat: 'food', w1: 'عصير', w2: 'مشروب' },
+            { cat: 'food', w1: 'طاجين', w2: 'مرقة' },
+            { cat: 'food', w1: 'روز', w2: 'فريك' },
+            { cat: 'food', w1: 'سمك', w2: 'سردين' },
+            { cat: 'food', w1: 'دجاج', w2: 'لحم' },
+            { cat: 'food', w1: 'بيض', w2: 'أومليت' },
+            { cat: 'food', w1: 'زبدة', w2: 'مارغرين' },
+            { cat: 'food', w1: 'تمر', w2: 'موز' },
+            { cat: 'food', w1: 'تفاح', w2: 'برتقال' },
+            { cat: 'food', w1: 'سلطة', w2: 'شوربة' },
+            { cat: 'food', w1: 'حليب', w2: 'كاكاو' },
+            { cat: 'food', w1: 'شاي', w2: 'قهوة' },
+            { cat: 'food', w1: 'كعك', w2: 'بسكوي' },
+            { cat: 'food', w1: 'فريت', w2: 'بورغر' },
+            { cat: 'food', w1: 'هريسة', w2: 'مايونيز' },
+            { cat: 'food', w1: 'كاتشب', w2: 'موستارد' },
+            { cat: 'food', w1: 'مربى', w2: 'عسل' },
+            { cat: 'food', w1: 'فطير', w2: 'كرواسون' },
+            { cat: 'food', w1: 'بريوش', w2: 'بانيني' },
+            { cat: 'food', w1: 'فلافل', w2: 'حمص' },
+
+            // --- ANIMALS (الحيوانات) ---
+            { cat: 'animals', w1: 'كلب', w2: 'قطوس' },
+            { cat: 'animals', w1: 'حمار', w2: 'بغل' },
+            { cat: 'animals', w1: 'حصان', w2: 'جمل' },
+            { cat: 'animals', w1: 'خروف', w2: 'ماعز' },
+            { cat: 'animals', w1: 'ديك', w2: 'دجاجة' },
+            { cat: 'animals', w1: 'بط', w2: 'وز' },
+            { cat: 'animals', w1: 'نحلة', w2: 'ذبابة' },
+            { cat: 'animals', w1: 'نملة', w2: 'صرصور' },
+            { cat: 'animals', w1: 'حية', w2: 'عقرب' },
+            { cat: 'animals', w1: 'تمساح', w2: 'سلحفاة' },
+            { cat: 'animals', w1: 'قرش', w2: 'حوت' },
+            { cat: 'animals', w1: 'دلفين', w2: 'فقمة' },
+            { cat: 'animals', w1: 'نمر', w2: 'أسد' },
+            { cat: 'animals', w1: 'فهد', w2: 'ذيب' },
+            { cat: 'animals', w1: 'قرد', w2: 'غوريلا' },
+            { cat: 'animals', w1: 'كلب', w2: 'ثعلب' },
+            { cat: 'animals', w1: 'غزال', w2: 'أرنب' },
+            { cat: 'animals', w1: 'فأر', w2: 'جرذ' },
+            { cat: 'animals', w1: 'بقرة', w2: 'ثور' },
+            { cat: 'animals', w1: 'حمامة', w2: 'عصفور' },
+            { cat: 'animals', w1: 'نورس', w2: 'بومة' },
+            { cat: 'animals', w1: 'ديك رومي', w2: 'بط' },
+            { cat: 'animals', w1: 'جمل', w2: 'ناقة' },
+            { cat: 'animals', w1: 'حشرة', w2: 'دودة' },
+            { cat: 'animals', w1: 'دعموص', w2: 'بعوضة' },
+            { cat: 'animals', w1: 'خنزير', w2: 'كلب' },
+            { cat: 'animals', w1: 'حصان', w2: 'حمار' },
+            { cat: 'animals', w1: 'ذيب', w2: 'نمر' },
+            { cat: 'animals', w1: 'أسد', w2: 'فهد' },
+            { cat: 'animals', w1: 'قط', w2: 'نمر' },
+
+            // --- OBJECTS (صبايط/دوزان) ---
+            { cat: 'objects', w1: 'شارجور', w2: 'كابل' },
+            { cat: 'objects', w1: 'سماعة', w2: 'مايكرو' },
+            { cat: 'objects', w1: 'كلافيي', w2: 'سوري' },
+            { cat: 'objects', w1: 'ساعة', w2: 'منبه' },
+            { cat: 'objects', w1: 'كاشي', w2: 'بلو' },
+            { cat: 'objects', w1: 'دفتر', w2: 'كتاب' },
+            { cat: 'objects', w1: 'قلم', w2: 'ستيلو' },
+            { cat: 'objects', w1: 'حقيبة', w2: 'ساك' },
+            { cat: 'objects', w1: 'مفتاح', w2: 'قفل' },
+            { cat: 'objects', w1: 'باب', w2: 'شباك' },
+            { cat: 'objects', w1: 'ضو', w2: 'لامبة' },
+            { cat: 'objects', w1: 'بطارية', w2: 'شارجور' },
+            { cat: 'objects', w1: 'مروحة', w2: 'كليماتيزور' },
+            { cat: 'objects', w1: 'بطانية', w2: 'مخدة' },
+            { cat: 'objects', w1: 'زرابي', w2: 'موكيت' },
+            { cat: 'objects', w1: 'صحن', w2: 'كاس' },
+            { cat: 'objects', w1: 'سكين', w2: 'مغرف' },
+            { cat: 'objects', w1: 'قدر', w2: 'مقلة' },
+            { cat: 'objects', w1: 'حوتة', w2: 'بانيو' },
+            { cat: 'objects', w1: 'صابون', w2: 'شامبو' },
+            { cat: 'objects', w1: 'موس', w2: 'شفرة' },
+            { cat: 'objects', w1: 'فرشاة', w2: 'مشط' },
+            { cat: 'objects', w1: 'نظارات', w2: 'عدسات' },
+            { cat: 'objects', w1: 'شنطة', w2: 'ساكادو' },
+            { cat: 'objects', w1: 'طابعة', w2: 'سكانير' },
+            { cat: 'objects', w1: 'USB', w2: 'ديسك دور' },
+            { cat: 'objects', w1: 'راوتر', w2: 'مودام' },
+            { cat: 'objects', w1: 'مانيت', w2: 'بلايستيشن' },
+            { cat: 'objects', w1: 'ريموت', w2: 'تلفازة' },
+            { cat: 'objects', w1: 'مكواة', w2: 'غسالة' },
+
+            // --- SPORTS (رياضة) ---
+            { cat: 'sports', w1: 'فوتبول', w2: 'هاندبول' },
+            { cat: 'sports', w1: 'باسكات', w2: 'فولي' },
+            { cat: 'sports', w1: 'كروس', w2: 'ماراطون' },
+            { cat: 'sports', w1: 'كارديو', w2: 'مسكل' },
+            { cat: 'sports', w1: 'بوش اب', w2: 'بلانك' },
+            { cat: 'sports', w1: 'سكوات', w2: 'لونج' },
+            { cat: 'sports', w1: 'دمبل', w2: 'بار' },
+            { cat: 'sports', w1: 'تريدميل', w2: 'بيسيكلات' },
+            { cat: 'sports', w1: 'كوتش', w2: 'لاعب' },
+            { cat: 'sports', w1: 'ماتش', w2: 'تدريب' },
+            { cat: 'sports', w1: 'هدف', w2: 'بنالتي' },
+            { cat: 'sports', w1: 'كارتون', w2: 'فول' },
+            { cat: 'sports', w1: 'شوط', w2: 'وقت' },
+            { cat: 'sports', w1: 'ملعب', w2: 'قاعة' },
+            { cat: 'sports', w1: 'جيم', w2: 'كروسفيت' },
+            { cat: 'sports', w1: 'سباحة', w2: 'غوص' },
+            { cat: 'sports', w1: 'ركوب', w2: 'قفز' },
+            { cat: 'sports', w1: 'ميدالية', w2: 'كأس' },
+            { cat: 'sports', w1: 'بطولة', w2: 'دوري' },
+            { cat: 'sports', w1: 'منتخب', w2: 'نادي' },
+            { cat: 'sports', w1: 'حكم', w2: 'مساعد' },
+            { cat: 'sports', w1: 'تسلل', w2: 'ضربة' },
+            { cat: 'sports', w1: 'تمرير', w2: 'تسديد' },
+            { cat: 'sports', w1: 'هجوم', w2: 'دفاع' },
+            { cat: 'sports', w1: 'لياقة', w2: 'سرعة' },
+            { cat: 'sports', w1: 'توازن', w2: 'قوة' },
+            { cat: 'sports', w1: 'مضمار', w2: 'حلبة' },
+            { cat: 'sports', w1: 'سباق', w2: 'منافسة' },
+            { cat: 'sports', w1: 'مدرب', w2: 'لاعب' },
+            { cat: 'sports', w1: 'احتياط', w2: 'أساسي' },
+
+            // --- FUNNY/SLANG (تمنيك/هدرة) ---
+            { cat: 'funny', w1: 'واش', w2: 'علاه' },
+            { cat: 'funny', w1: 'بزاف', w2: 'شوية' },
+            { cat: 'funny', w1: 'صح', w2: 'كذب' },
+            { cat: 'funny', w1: 'حومة', w2: 'بلاد' },
+            { cat: 'funny', w1: 'خويا', w2: 'صاحبي' },
+            { cat: 'funny', w1: 'برك', w2: 'صافي' },
+            { cat: 'funny', w1: 'دير', w2: 'حبس' },
+            { cat: 'funny', w1: 'جيب', w2: 'دي' },
+            { cat: 'funny', w1: 'روح', w2: 'اجي' },
+            { cat: 'funny', w1: 'نوض', w2: 'اقعد' },
+            { cat: 'funny', w1: 'باهي', w2: 'شابة' },
+            { cat: 'funny', w1: 'غلط', w2: 'صح' },
+            { cat: 'funny', w1: 'ساهل', w2: 'صعيب' },
+            { cat: 'funny', w1: 'سريع', w2: 'بطئ' },
+            { cat: 'funny', w1: 'مليح', w2: 'خايب' },
+            { cat: 'funny', w1: 'نحبك', w2: 'نكرهك' },
+            { cat: 'funny', w1: 'ضحك', w2: 'بكى' },
+            { cat: 'funny', w1: 'طويل', w2: 'قصير' },
+            { cat: 'funny', w1: 'سمين', w2: 'ضعيف' },
+            { cat: 'funny', w1: 'حر', w2: 'برد' },
+            { cat: 'funny', w1: 'نهار', w2: 'ليل' },
+            { cat: 'funny', w1: 'فوق', w2: 'تحت' },
+            { cat: 'funny', w1: 'قدام', w2: 'لور' },
+            { cat: 'funny', w1: 'يمين', w2: 'يسار' },
+            { cat: 'funny', w1: 'داخل', w2: 'برا' },
+            { cat: 'funny', w1: 'بلاصة', w2: 'مكان' },
+            { cat: 'funny', w1: 'عادي', w2: 'غريب' },
+            { cat: 'funny', w1: 'مفهوم', w2: 'معقد' },
+            { cat: 'funny', w1: 'باهي', w2: 'كارثة' },
+            { cat: 'funny', w1: 'هايل', w2: 'زفت' },
+            // --- BODY (الجسم) ---
+            { cat: 'body', w1: 'راس', w2: 'وجه' },
+            { cat: 'body', w1: 'عين', w2: 'ودن' },
+            { cat: 'body', w1: 'نيف', w2: 'فم' },
+            { cat: 'body', w1: 'سنان', w2: 'لسان' },
+            { cat: 'body', w1: 'رقبة', w2: 'كتف' },
+            { cat: 'body', w1: 'ذراع', w2: 'يد' },
+            { cat: 'body', w1: 'صبع', w2: 'ظفر' },
+            { cat: 'body', w1: 'صدر', w2: 'ظهر' },
+            { cat: 'body', w1: 'كرش', w2: 'ظهر' },
+            { cat: 'body', w1: 'رجل', w2: 'ركبة' },
+            { cat: 'body', w1: 'فخذ', w2: 'ساق' },
+            { cat: 'body', w1: 'كعب', w2: 'قدم' },
+            { cat: 'body', w1: 'عضلة', w2: 'عظم' },
+            { cat: 'body', w1: 'دم', w2: 'جلد' },
+            { cat: 'body', w1: 'شعر', w2: 'لحية' },
+            { cat: 'body', w1: 'مخ', w2: 'قلب' },
+            { cat: 'body', w1: 'عينين', w2: 'حواجب' },
+            { cat: 'body', w1: 'رموش', w2: 'جبهة' },
+            { cat: 'body', w1: 'خشم', w2: 'فم' },
+            { cat: 'body', w1: 'دقن', w2: 'لحية' },
+            { cat: 'body', w1: 'ضلوع', w2: 'عمود فقري' },
+            { cat: 'body', w1: 'كتاف', w2: 'صدر' },
+            { cat: 'body', w1: 'كف', w2: 'يد' },
+            { cat: 'body', w1: 'أصابع', w2: 'كف' },
+            { cat: 'body', w1: 'ركبة', w2: 'ساق' },
+            { cat: 'body', w1: 'كعب', w2: 'رجل' },
+            { cat: 'body', w1: 'جلد', w2: 'شعر' },
+            { cat: 'body', w1: 'دماغ', w2: 'مخ' },
+            { cat: 'body', w1: 'قلب', w2: 'رئة' },
+            { cat: 'body', w1: 'معدة', w2: 'كبد' },
+
+            // --- PLACES (بلايص) ---
+            { cat: 'places', w1: 'وهران', w2: 'دزاير' },
+            { cat: 'places', w1: 'سطيف', w2: 'تيزي' },
+            { cat: 'places', w1: 'بجاية', w2: 'جيجل' },
+            { cat: 'places', w1: 'تلمسان', w2: 'معسكر' },
+            { cat: 'places', w1: 'الجزائر', w2: 'تونس' },
+            { cat: 'places', w1: 'المغرب', w2: 'فرنسا' },
+            { cat: 'places', w1: 'إسبانيا', w2: 'إيطاليا' },
+            { cat: 'places', w1: 'حومة', w2: 'حي' },
+            { cat: 'places', w1: 'شارع', w2: 'زنقة' },
+            { cat: 'places', w1: 'دار', w2: 'فيلا' },
+            { cat: 'places', w1: 'عمارة', w2: 'سطح' },
+            { cat: 'places', w1: 'غرفة', w2: 'صالون' },
+            { cat: 'places', w1: 'مطبخ', w2: 'حمام' },
+            { cat: 'places', w1: 'مدرسة', w2: 'جامعة' },
+            { cat: 'places', w1: 'جامع', w2: 'كنيسة' },
+            { cat: 'places', w1: 'قهوة', w2: 'مطعم' },
+            { cat: 'places', w1: 'محل', w2: 'سوق' },
+            { cat: 'places', w1: 'مول', w2: 'مارشي' },
+            { cat: 'places', w1: 'حديقة', w2: 'غابة' },
+            { cat: 'places', w1: 'بحر', w2: 'جبل' },
+            { cat: 'places', w1: 'صحراء', w2: 'واحة' },
+            { cat: 'places', w1: 'مطار', w2: 'ميناء' },
+            { cat: 'places', w1: 'محطة', w2: 'موقف' },
+            { cat: 'places', w1: 'فندق', w2: 'نزل' },
+            { cat: 'places', w1: 'مستشفى', w2: 'عيادة' },
+            { cat: 'places', w1: 'صيدلية', w2: 'مخبر' },
+            { cat: 'places', w1: 'ملعب', w2: 'قاعة' },
+            { cat: 'places', w1: 'مسرح', w2: 'سينما' },
+            { cat: 'places', w1: 'بنك', w2: 'بريد' },
+            { cat: 'places', w1: 'إدارة', w2: 'بلدية' },
+
+            // --- JOBS (خدمة) ---
+            { cat: 'jobs', w1: 'طبيب', w2: 'جراح' },
+            { cat: 'jobs', w1: 'ممرض', w2: 'صيدلي' },
+            { cat: 'jobs', w1: 'شرطي', w2: 'دركي' },
+            { cat: 'jobs', w1: 'عسكري', w2: 'حارس' },
+            { cat: 'jobs', w1: 'أستاذ', w2: 'معلم' },
+            { cat: 'jobs', w1: 'مدير', w2: 'مراقب' },
+            { cat: 'jobs', w1: 'سائق', w2: 'طاكسيور' },
+            { cat: 'jobs', w1: 'ميكانيكي', w2: 'كهربائي' },
+            { cat: 'jobs', w1: 'بناء', w2: 'دهان' },
+            { cat: 'jobs', w1: 'نجار', w2: 'حداد' },
+            { cat: 'jobs', w1: 'طباخ', w2: 'خباز' },
+            { cat: 'jobs', w1: 'نادل', w2: 'قهواجي' },
+            { cat: 'jobs', w1: 'تاجر', w2: 'بائع' },
+            { cat: 'jobs', w1: 'محاسب', w2: 'موظف' },
+            { cat: 'jobs', w1: 'مهندس', w2: 'تقني' },
+            { cat: 'jobs', w1: 'مطور', w2: 'مبرمج' },
+            { cat: 'jobs', w1: 'مصمم', w2: 'مصور' },
+            { cat: 'jobs', w1: 'صحفي', w2: 'مذيع' },
+            { cat: 'jobs', w1: 'فلاح', w2: 'مربي' },
+            { cat: 'jobs', w1: 'صياد', w2: 'بحار' },
+            { cat: 'jobs', w1: 'عامل', w2: 'حمال' },
+            { cat: 'jobs', w1: 'حلاق', w2: 'تجميل' },
+            { cat: 'jobs', w1: 'خياط', w2: 'مصمم' },
+            { cat: 'jobs', w1: 'مغني', w2: 'موسيقي' },
+            { cat: 'jobs', w1: 'ممثل', w2: 'كوميدي' },
+            { cat: 'jobs', w1: 'يوتوبر', w2: 'تيكتوكر' },
+            { cat: 'jobs', w1: 'ستريمر', w2: 'لاعب' },
+            { cat: 'jobs', w1: 'حارس', w2: 'منظف' },
+            { cat: 'jobs', w1: 'ساعي', w2: 'موزع' },
+            { cat: 'jobs', w1: 'موظف', w2: 'مدير' },
+        ];
+
+        // --- State ---
+        let gameState = {
+            numPlayers: 4,
+            numImposters: 1,
+            mode: 'classic',
+            category: 'all',
+            includeSpy: false,
+            includeBlind: false,
+            players: [], // { id, role, word, subtext }
+            currentPlayerIdx: 0,
+            originalWord: '',
+            fakeWord: '',
+            revealTimer: null,
+            votedOutId: null,
+            spyChoice: null,
+            winnerTitle: '',
+            winnerSubtitle: ''
+        };
+
+        const categoryNames = {
+            'all': 'الكل',
+            'food': 'طعام',
+            'animals': 'حيوانات',
+            'objects': 'أدوات',
+            'sports': 'رياضة',
+            'funny': 'مضحك / تمنيك',
+            'body': 'جسم',
+            'places': 'مدن / دول',
+            'jobs': 'مهن'
+        };
+
+        // --- Audio Context for Sfx ---
+        const playSfx = (type) => {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            if (type === 'reveal') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            } else if (type === 'win') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            }
+        };
+
+        const vibrate = (ms = 50) => {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        };
+
+        // --- UI Helpers ---
+        const showScreen = (id) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        };
+
+        // --- Game Logic ---
+        const initGame = () => {
+            let pool = wordDatabase;
+            if (gameState.category !== 'all') {
+                pool = wordDatabase.filter(w => w.cat === gameState.category);
+            }
+            const pair = pool[Math.floor(Math.random() * pool.length)];
+            gameState.originalWord = pair.w1;
+            gameState.fakeWord = pair.w2;
+
+            // Generate Roles Array
+            let roles = [];
+            gameState.includeSpy = document.getElementById('spy-toggle').checked;
+            gameState.includeBlind = document.getElementById('blind-toggle').checked;
+
+            if (gameState.includeSpy) roles.push('spy');
+            if (gameState.includeBlind) roles.push('blind');
+            for (let i = 0; i < gameState.numImposters; i++) roles.push('imposter');
+
+            while (roles.length < gameState.numPlayers) {
+                roles.push('normal');
+            }
+            if (roles.length > gameState.numPlayers) {
+                roles = roles.slice(0, gameState.numPlayers);
+            }
+            roles.sort(() => Math.random() - 0.5);
+
+            gameState.players = roles.map((role, i) => {
+                let word = gameState.originalWord;
+                let subtext = '';
+
+                if (role === 'imposter') {
+                    word = (gameState.mode === 'classic') ? 'أنت المحتال' : gameState.fakeWord;
+                } else if (role === 'spy') {
+                    word = 'أنت الجاسوس';
+                } else if (role === 'blind') {
+                    word = 'أنت الأعمى';
+                    subtext = 'لا ترى أية كلمة، لكنك لست المحتال.';
+                }
+
+                return {
+                    id: i + 1,
+                    role: role,
+                    word: word,
+                    subtext: subtext
+                };
+            });
+
+            // Inform spy of the imposter
+            const imposterIds = gameState.players.filter(p => p.role === 'imposter').map(p => p.id);
+            gameState.players.forEach(p => {
+                if (p.role === 'spy') {
+                    p.subtext = `المحتال هو اللاعب: ${imposterIds.join(' و ')}. لا تكشف نفسك حتى يتم كشفه!`;
+                }
+            });
+
+            gameState.currentPlayerIdx = 0;
+            gameState.votedOutId = null;
+            gameState.spyChoice = null;
+            showScreen('screen-pass');
+            updatePassScreen();
+        };
+
+        const updatePassScreen = () => {
+            document.getElementById('current-player-display').innerText = gameState.players[gameState.currentPlayerIdx].id;
+        };
+
+        const nextPlayer = () => {
+            gameState.currentPlayerIdx++;
+            if (gameState.currentPlayerIdx < gameState.players.length) {
+                showScreen('screen-pass');
+                updatePassScreen();
+            } else {
+                showScreen('screen-game');
+                document.getElementById('game-word-hint').innerText = (gameState.mode === 'classic') ? '؟؟؟؟' : 'تشابه الكلمات';
+            }
+        };
+
+        const buildVotingList = () => {
+            const list = document.getElementById('voting-list');
+            list.innerHTML = '';
+            gameState.players.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'voting-item';
+                item.innerHTML = `
+                    <div class="p-num">اللاعب</div>
+                    <div class="p-name">${p.id}</div>
+                `;
+                item.onclick = () => {
+                    document.querySelectorAll('.voting-item').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    gameState.votedOutId = p.id;
+                    document.getElementById('confirm-vote-btn').classList.remove('hidden');
+                    playSfx('click');
+                };
+                list.appendChild(item);
+            });
+        };
+
+        const showVotingReveal = () => {
+            const votedPlayer = gameState.players.find(p => p.id === gameState.votedOutId);
+            const titleEl = document.getElementById('voting-result-title');
+            const textEl = document.getElementById('voting-result-text');
+
+            showScreen('screen-voting-reveal');
+
+            if (votedPlayer.role === 'imposter') {
+                titleEl.innerText = "تم طرد المحتال!";
+                titleEl.style.color = "var(--primary-light)";
+                textEl.innerText = "نجح المواطنون في اكتشاف المحتال.";
+                vibrate([100, 50, 100]);
+            } else {
+                titleEl.innerText = "طرد خاطئ!";
+                titleEl.style.color = "var(--secondary)";
+                textEl.innerText = "اللاعب المطرود كان مواطناً (أو دوراً آخر). المحتال فاز!";
+                vibrate(500);
+            }
+        };
+
+        const prepareSpyGuessing = () => {
+            const optionsContainer = document.getElementById('spy-word-options');
+            optionsContainer.innerHTML = '';
+            document.getElementById('spy-confirm-btn').disabled = true;
+
+            // Get category words
+            let pool = wordDatabase;
+            if (gameState.category !== 'all') {
+                pool = wordDatabase.filter(w => w.cat === gameState.category);
+            }
+
+            // Pick 11 random words + the correct original word
+            let options = new Set([gameState.originalWord]);
+            while (options.size < Math.min(12, pool.length * 2)) {
+                const pair = pool[Math.floor(Math.random() * pool.length)];
+                options.add(pair.w1);
+                options.add(pair.w2);
+            }
+
+            let finalOptions = Array.from(options).slice(0, 12).sort(() => Math.random() - 0.5);
+
+            finalOptions.forEach(word => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerText = word;
+                chip.onclick = () => {
+                    document.querySelectorAll('#spy-word-options .chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    gameState.spyChoice = word;
+                    document.getElementById('spy-confirm-btn').disabled = false;
+                    playSfx('click');
+                };
+                optionsContainer.appendChild(chip);
+            });
+            showScreen('screen-spy-guess');
+        };
+
+        const showResults = () => {
+            showScreen('screen-results');
+            document.getElementById('res-original-word').innerText = gameState.originalWord;
+
+            const votedPlayer = gameState.players.find(p => p.id === gameState.votedOutId);
+            let imposterCaught = (votedPlayer && votedPlayer.role === 'imposter');
+            let spyExists = gameState.players.some(p => p.role === 'spy');
+
+            // Determine winners
+            if (!imposterCaught) {
+                gameState.winnerTitle = "فوز المحتال!";
+                gameState.winnerSubtitle = "لم يتمكن المواطنون من اكتشاف المحتال.";
+            } else if (imposterCaught && spyExists && gameState.spyChoice === gameState.originalWord) {
+                gameState.winnerTitle = "فوز الجاسوس!";
+                gameState.winnerSubtitle = "الجاسوس عرف الكلمة الصحيحة وسرق الفوز!";
+            } else if (imposterCaught && spyExists && gameState.spyChoice !== gameState.originalWord) {
+                gameState.winnerTitle = "فوز المواطنين!";
+                gameState.winnerSubtitle = "تم كشف المحتال، وفشل الجاسوس في تخمين الكلمة.";
+            } else {
+                gameState.winnerTitle = "فوز المواطنين!";
+                gameState.winnerSubtitle = "تم كشف المحتال بنجاح!";
+            }
+
+            document.getElementById('win-title').innerText = gameState.winnerTitle;
+            document.getElementById('win-subtitle').innerText = gameState.winnerSubtitle;
+
+            if (gameState.winnerTitle.includes("المواطنين")) {
+                document.getElementById('win-title').style.color = "var(--primary-light)";
+                playSfx('win');
+            } else if (gameState.winnerTitle.includes("الجاسوس")) {
+                document.getElementById('win-title').style.color = "#10b981";
+                playSfx('win');
+            } else {
+                document.getElementById('win-title').style.color = "var(--secondary)";
+            }
+
+            const list = document.getElementById('results-list');
+            list.innerHTML = '';
+            gameState.players.forEach(p => {
+                const item = document.createElement('div');
+                item.className = `res-item ${p.role === 'imposter' ? 'imposter' : ''}`;
+
+                let roleName = 'مواطن';
+                if (p.role === 'imposter') roleName = 'محتال';
+                if (p.role === 'spy') roleName = 'جاسوس';
+                if (p.role === 'blind') roleName = 'أعمى';
+
+                item.innerHTML = `
+                    <div>
+                        <span class="p-num">اللاعب ${p.id}</span>
+                        <div class="p-name">${roleName}</div>
+                    </div>
+                    <div class="p-wrd">${p.word}</div>
+                `;
+                list.appendChild(item);
+            });
+        };
+
+        // --- Event Listeners ---
+
+        // Setup Screen
+        document.getElementById('players-slider').addEventListener('input', (e) => {
+            gameState.numPlayers = e.target.value;
+            document.getElementById('players-value').innerText = e.target.value;
+            const impSlider = document.getElementById('imposters-slider');
+            impSlider.max = Math.max(1, gameState.numPlayers - 1);
+            if (parseInt(impSlider.value) > impSlider.max) {
+                impSlider.value = impSlider.max;
+                document.getElementById('imposters-value').innerText = impSlider.value;
+            }
+        });
+
+        document.getElementById('imposters-slider').addEventListener('input', (e) => {
+            gameState.numImposters = e.target.value;
+            document.getElementById('imposters-value').innerText = e.target.value;
+        });
+
+        document.querySelectorAll('[data-mode]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                gameState.mode = btn.getAttribute('data-mode');
+                playSfx('click');
+            });
+        });
+
+        document.querySelectorAll('[data-cat]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                gameState.category = btn.getAttribute('data-cat');
+                playSfx('click');
+            });
+        });
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            playSfx('click');
+            vibrate(100);
+            initGame();
+        });
+
+        document.getElementById('fullscreen-btn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Fullscreen error: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        });
+
+        // Pass Phone Screen
+        document.getElementById('im-ready-btn').addEventListener('click', () => {
+            playSfx('click');
+            showScreen('screen-reveal');
+            resetRevealScreen();
+        });
+
+        // Reveal Screen
+        const resetRevealScreen = () => {
+            clearTimeout(gameState.revealTimer);
+            document.getElementById('role-initial-text').classList.remove('hidden');
+            document.getElementById('role-content').classList.add('hidden');
+            document.getElementById('done-reveal-btn').classList.add('hidden');
+            document.getElementById('reveal-card').classList.remove('unblurred');
+            document.getElementById('reveal-card').classList.add('blur-overlay');
+            document.getElementById('role-category').innerText = '';
+            document.getElementById('reveal-instruction').innerText = "انقر للكشف عن دورك";
+        };
+
+        document.getElementById('reveal-card').addEventListener('click', () => {
+            const card = document.getElementById('reveal-card');
+            if (card.classList.contains('unblurred')) return; // already revealed
+
+            card.classList.remove('blur-overlay');
+            card.classList.add('unblurred');
+
+            const player = gameState.players[gameState.currentPlayerIdx];
+            const wordEl = document.getElementById('role-word');
+            const catEl = document.getElementById('role-category');
+            const subEl = document.getElementById('role-subtext');
+
+            const pair = wordDatabase.find(p => p.w1 === gameState.originalWord || p.w2 === gameState.originalWord);
+            catEl.innerText = `${categoryNames[pair.cat] || 'عام'}`;
+
+            wordEl.className = 'role-word word-anim';
+            if (player.role === 'imposter' && gameState.mode === 'classic') {
+                wordEl.classList.add('imposter-text');
+                vibrate([50, 50, 50]);
+            } else if (player.role === 'spy') {
+                wordEl.classList.add('spy-text');
+                vibrate([100, 50]);
+            } else if (player.role === 'blind') {
+                wordEl.classList.add('blind-text');
+                vibrate(50);
+            } else {
+                vibrate(50);
+            }
+
+            wordEl.innerText = player.word;
+            if (player.subtext) {
+                subEl.innerText = player.subtext;
+                subEl.style.display = 'block';
+            } else {
+                subEl.style.display = 'none';
+            }
+
+            document.getElementById('role-initial-text').classList.add('hidden');
+            document.getElementById('role-content').classList.remove('hidden');
+            playSfx('reveal');
+
+            // Auto Hide Anti-Cheat
+            gameState.revealTimer = setTimeout(() => {
+                card.classList.remove('unblurred');
+                card.classList.add('blur-overlay');
+                document.getElementById('role-content').classList.add('hidden');
+                document.getElementById('role-initial-text').classList.remove('hidden');
+                document.getElementById('role-initial-text').innerText = "تم الإخفاء";
+                document.getElementById('reveal-instruction').innerText = "انتهى الوقت";
+                document.getElementById('done-reveal-btn').classList.remove('hidden');
+            }, 3000);
+        });
+
+        document.getElementById('done-reveal-btn').addEventListener('click', () => {
+            playSfx('click');
+            nextPlayer();
+        });
+
+        // Game/Voting
+        document.getElementById('start-voting-btn').addEventListener('click', () => {
+            playSfx('click');
+            buildVotingList();
+            showScreen('screen-voting');
+        });
+
+        document.getElementById('confirm-vote-btn').addEventListener('click', () => {
+            playSfx('click');
+            showVotingReveal();
+        });
+
+        document.getElementById('next-phase-btn').addEventListener('click', () => {
+            playSfx('click');
+            const votedPlayer = gameState.players.find(p => p.id === gameState.votedOutId);
+            const spyExists = gameState.players.some(p => p.role === 'spy');
+
+            if (votedPlayer.role === 'imposter' && spyExists) {
+                prepareSpyGuessing();
+            } else {
+                showResults();
+            }
+        });
+
+        // Spy Guessing
+        document.getElementById('spy-confirm-btn').addEventListener('click', () => {
+            playSfx('click');
+            showResults();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            playSfx('click');
+            showScreen('screen-start');
+        });
+
+    </script>
+</body>
+
+</html>
