@@ -688,7 +688,7 @@
             <div class="card-group">
                 <span class="section-label">وقت النقاش</span>
                 <div class="control-row">
-                    <input type="range" id="time-slider" min="30" max="180" step="30" value="60">
+                    <input type="range" id="time-slider" min="30" max="180" step="10" value="60">
                     <div id="time-value" class="number-badge">60ث</div>
                 </div>
             </div>
@@ -706,6 +706,14 @@
                 <div class="control-row">
                     <input type="range" id="imposters-slider" min="1" max="3" value="1">
                     <div id="imposters-value" class="number-badge">1</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">نمط اللعب</span>
+                <div class="chip-grid" id="mode-selector">
+                    <div class="chip active" data-mode="classic">كلاسيكي</div>
+                    <div class="chip" data-mode="hard">صعب (Hard)</div>
                 </div>
             </div>
 
@@ -888,12 +896,17 @@
                 <p class="subtitle" id="win-subtitle">...</p>
             </header>
 
-            <div class="card-group" style="padding: 16px;">
+            <div class="card-group" style="padding: 16px;" id="res-words-container">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span class="section-label" style="margin:0;">الكلمة الأصلية</span>
                         <div id="res-original-word"
                             style="font-weight: 800; font-size: 1.2rem; color: var(--primary-light);">...</div>
+                    </div>
+                    <div id="res-fake-word-group" style="display: none; text-align: left;">
+                        <span class="section-label" style="margin:0;">الكلمة المزيفة</span>
+                        <div id="res-fake-word" style="font-weight: 800; font-size: 1.2rem; color: var(--secondary);">
+                            ...</div>
                     </div>
                 </div>
             </div>
@@ -1308,7 +1321,7 @@
                 let subtext = '';
 
                 if (role === 'imposter') {
-                    word = (gameState.mode === 'classic') ? 'أنت المحتال' : gameState.fakeWord;
+                    word = (gameState.mode === 'classic') ? 'المحتال' : gameState.fakeWord;
                 } else if (role === 'spy') {
                     word = 'أنت الجاسوس';
                 } else if (role === 'blind') {
@@ -1458,6 +1471,14 @@
         const showResults = () => {
             showScreen('screen-results');
             document.getElementById('res-original-word').innerText = gameState.originalWord;
+
+            const fakeWordGroup = document.getElementById('res-fake-word-group');
+            if (gameState.mode === 'hard') {
+                document.getElementById('res-fake-word').innerText = gameState.fakeWord;
+                fakeWordGroup.style.display = 'block';
+            } else {
+                fakeWordGroup.style.display = 'none';
+            }
 
             const votedPlayer = gameState.players.find(p => p.id === gameState.votedOutId);
             let imposterCaught = (votedPlayer && votedPlayer.role === 'imposter');
@@ -1662,18 +1683,6 @@
                 vibrate(50);
             } else {
                 vibrate(50);
-                if (descEl) {
-                    if (pair.w1 === player.word) {
-                        descEl.innerText = pair.d1;
-                        descEl.style.display = 'block';
-                    } else if (pair.w2 === player.word) {
-                        descEl.innerText = pair.d2;
-                        descEl.style.display = 'block';
-                    }
-                }
-            }
-
-            if (player.role === 'imposter' && gameState.mode === 'hard') {
                 if (descEl) {
                     if (pair.w1 === player.word) {
                         descEl.innerText = pair.d1;
