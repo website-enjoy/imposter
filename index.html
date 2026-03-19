@@ -1,0 +1,2426 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>لعبة المحتال | Imposter Game</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --secondary-light: #f472b6;
+            --bg: #0b0f1a;
+            --surface: #161c2d;
+            --surface-hover: #1e293b;
+            --text: #ffffff;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --radius-xl: 32px;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+            line-height: 1.5;
+        }
+
+        html {
+            height: 100%;
+            overscroll-behavior: none;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            max-width: 450px;
+            position: relative;
+            background:
+                radial-gradient(circle at -20% -20%, rgba(99, 102, 241, 0.15), transparent 50%),
+                radial-gradient(circle at 120% 120%, rgba(236, 72, 153, 0.1), transparent 50%);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px);
+            opacity: 0;
+            transform: scale(0.98) translateY(10px);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1;
+            /* Allow scrolling only if the screen height is extremely small */
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .screen.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            z-index: 2;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-bottom: 2px;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .card-group {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .number-badge {
+            width: 32px;
+            height: 32px;
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--primary-light);
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: var(--surface-hover);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border: 3px solid var(--surface);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .chip-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .chip-grid.categories {
+            display: flex;
+            overflow-x: auto;
+            gap: 6px;
+            padding-bottom: 4px;
+            /* for scrollbar */
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chip-grid.categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip {
+            background: var(--surface-hover);
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .chip.active {
+            background: var(--primary);
+            border-color: var(--primary-light);
+            color: white;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-main {
+            padding: 14px;
+            border-radius: var(--radius-lg);
+            font-size: 1.15rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: auto;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            padding: 16px;
+        }
+
+        .player-indicator {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--surface), var(--surface-hover));
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--primary-light);
+            margin: 20px auto;
+            position: relative;
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .player-indicator::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            bottom: -10px;
+            left: -10px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-light);
+            opacity: 0.5;
+            animation: pulseAvatar 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulseAvatar {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .role-reveal-scene {
+            width: 100%;
+            flex: 1;
+            min-height: 180px;
+            max-height: 250px;
+            perspective: 1000px;
+            /* Enable 3D space */
+            margin-bottom: 12px;
+        }
+
+        .role-reveal-box {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform-style: preserve-3d;
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+        }
+
+        .role-reveal-box.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .card-front {
+            background: rgba(22, 28, 45, 0.95);
+            background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 2px, transparent 2px, transparent 8px);
+        }
+
+        .pulse-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--surface-hover);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+                transform: scale(0.95);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(99, 102, 241, 0);
+                transform: scale(1);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(0.95);
+            }
+        }
+
+        .card-back {
+            background: radial-gradient(circle at center, var(--surface-hover), var(--surface));
+            transform: rotateY(180deg);
+        }
+
+        .role-reveal-box.revealed {
+            background: radial-gradient(circle at center, var(--surface-hover), var(--surface));
+        }
+
+        .word-anim {
+            font-size: 3rem;
+            font-weight: 950;
+            text-align: center;
+            animation: popIn 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8) translateY(20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .results-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+
+        .res-item {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-right: 4px solid transparent;
+        }
+
+        .res-item.imposter {
+            border-right-color: var(--secondary);
+            background: rgba(236, 72, 153, 0.05);
+        }
+
+        .p-num {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .p-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .p-wrd {
+            font-weight: 800;
+            color: var(--primary-light);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Animation for shake */
+        .shake {
+            animation: shakeEffect 0.5s ease-in-out;
+        }
+
+        @keyframes shakeEffect {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-5px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        /* New Game Mechanics Styles */
+        .toggle-row {
+            background: var(--surface-hover);
+            padding: 6px 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            appearance: none;
+            width: 48px;
+            height: 24px;
+            background: var(--surface);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toggle-switch:checked {
+            background: var(--primary);
+            border-color: var(--primary-light);
+        }
+
+        .toggle-switch:checked::after {
+            transform: translateX(24px);
+            background: white;
+        }
+
+        /* End 3D Flip Mechanics */
+
+        .role-word.imposter-text {
+            color: var(--secondary);
+        }
+
+        .role-word.spy-text {
+            color: var(--spy-color, #10b981);
+        }
+
+        .role-word.blind-text {
+            color: var(--blind-color, #64748b);
+        }
+
+        .voting-item {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .voting-item.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            transform: scale(1.02);
+        }
+
+        .voting-item .p-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-right: auto;
+        }
+
+        .voting-item .p-num {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-left: 16px;
+        }
+
+        /* Home Button */
+        .btn-home {
+            position: fixed;
+            top: env(safe-area-inset-top, 20px);
+            right: 20px;
+            height: 44px;
+            padding: 0 16px;
+            border-radius: 22px;
+            background: rgba(22, 28, 45, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-home:hover {
+            background: var(--surface-hover);
+            transform: scale(1.1);
+        }
+
+        .btn-home:active {
+            transform: scale(0.9);
+        }
+
+        /* Player Grid System */
+        .player-grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 10px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .player-slot {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            position: relative;
+            min-height: 140px;
+        }
+
+        .player-slot:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-light);
+            background: var(--surface-hover);
+        }
+
+        .player-slot.done {
+            opacity: 0.7;
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .player-slot.done .player-avatar {
+            background: #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .player-slot.done::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .player-avatar {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s;
+        }
+
+        .player-name-label {
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        /* End Player Grid System */
+
+        /* Discussion Timer */
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 950;
+            font-variant-numeric: tabular-nums;
+            color: var(--text);
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+            transition: color 0.3s, transform 0.1s;
+        }
+
+        .timer-display.running {
+            color: var(--primary-light);
+            text-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+        }
+
+        .timer-display.warning {
+            color: var(--secondary);
+            animation: pulseTimer 1s infinite alternate;
+            text-shadow: 0 0 30px rgba(236, 72, 153, 0.7);
+        }
+
+        @keyframes pulseTimer {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .btn-half {
+            flex: 1;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-danger {
+            background: rgba(236, 72, 153, 0.15);
+            color: var(--secondary-light);
+            border: 1px solid rgba(236, 72, 153, 0.3);
+        }
+
+        .btn-danger:active {
+            background: rgba(236, 72, 153, 0.3);
+            transform: scale(0.97);
+        }
+
+        .btn-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:active {
+            background: rgba(16, 185, 129, 0.3);
+            transform: scale(0.97);
+        }
+
+        /* Random Starter Pick Styles */
+        .starter-card {
+            background: var(--surface);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-lg);
+            padding: 40px 20px;
+            text-align: center;
+            margin: 40px 0;
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .starter-number {
+            font-size: 6rem;
+            font-weight: 950;
+            color: var(--primary-light);
+            text-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+            margin: 20px 0;
+            transition: all 0.1s;
+        }
+
+        .starter-label {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .winner-glow {
+            animation: winnerGlow 1s infinite alternate;
+        }
+
+        @keyframes winnerGlow {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+
+            100% {
+                transform: scale(1.1);
+                filter: brightness(1.3);
+                text-shadow: 0 0 50px var(--primary-light);
+            }
+        }
+
+        .cycling {
+            animation: cycleNumber 0.1s infinite;
+        }
+
+        @keyframes cycleNumber {
+            0% {
+                opacity: 0.5;
+                transform: scale(0.9);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+
+            100% {
+                opacity: 0.5;
+                transform: scale(0.9);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <button id="home-btn" class="btn-home hidden" aria-label="العودة للقائمة الرئيسية">العودة</button>
+
+        <!-- Start Screen -->
+        <div id="screen-start" class="screen active">
+            <header>
+                <h1>زلاط المحتال</h1>
+                <p class="subtitle">لعبة ذكاء، خداع، وتحليل</p>
+            </header>
+
+            <div class="card-group">
+                <span class="section-label">وقت النقاش</span>
+                <div class="control-row">
+                    <input type="range" id="time-slider" min="30" max="300" step="10" value="60">
+                    <div id="time-value" class="number-badge">60ث</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">عدد اللاعبين</span>
+                <div class="control-row">
+                    <input type="range" id="players-slider" min="3" max="20" value="4">
+                    <div id="players-value" class="number-badge">4</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">عدد المحتالين</span>
+                <div class="control-row">
+                    <input type="range" id="imposters-slider" min="1" max="3" value="1">
+                    <div id="imposters-value" class="number-badge">1</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">نمط اللعب</span>
+                <div class="chip-grid" id="mode-selector">
+                    <div class="chip active" data-mode="classic">كلاسيكي</div>
+                    <div class="chip" data-mode="hard">صعب (Hard)</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">الأدوار الإضافية</span>
+                <div class="role-toggles" style="display: flex; gap: 6px; flex-direction: column;">
+                    <label class="toggle-row">
+                        <span class="toggle-label"
+                            style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span>الجاسوس (Spy)</span>
+                            <input type="checkbox" id="spy-toggle" class="toggle-switch">
+                        </span>
+                    </label>
+                    <label class="toggle-row">
+                        <span class="toggle-label"
+                            style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span>الأعمى (Blind)</span>
+                            <input type="checkbox" id="blind-toggle" class="toggle-switch">
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">نوع الكلمات</span>
+                <div class="chip-grid" id="word-type-selector">
+                    <div class="chip active" data-type="single">كلمة واحدة</div>
+                    <div class="chip" data-type="multi">كلمات متعددة</div>
+                </div>
+            </div>
+
+            <div class="card-group">
+                <span class="section-label">التصنيفات</span>
+                <div class="chip-grid categories" id="category-selector">
+                    <div class="chip active" data-cat="all">الكل</div>
+                    <div class="chip" data-cat="food">طعام</div>
+                    <div class="chip" data-cat="animals">حيوانات</div>
+                    <div class="chip" data-cat="objects">أدوات</div>
+                    <div class="chip" data-cat="sports">رياضة</div>
+                    <div class="chip" data-cat="body">جسم</div>
+                    <div class="chip" data-cat="places">مدن/دول</div>
+                    <div class="chip" data-cat="jobs">مهن</div>
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary" id="start-btn">ابدأ اللعبة</button>
+        </div>
+
+        <!-- Player Grid Screen -->
+        <div id="screen-player-grid" class="screen">
+            <header>
+                <h1>اللاعبون</h1>
+                <p class="subtitle">اضغط على اسمك للكشف عن كلمتك، ثم مرر الجهاز للاعب التالي.</p>
+            </header>
+
+            <div class="player-grid-container" id="player-grid">
+                <!-- Player slots dynamic here -->
+            </div>
+
+            <button class="btn-main btn-primary" id="all-revealed-btn" style="margin-top: auto; display: none;">الجميع
+                جاهز</button>
+        </div>
+
+        <!-- Reveal Screen -->
+        <div id="screen-reveal" class="screen">
+            <header>
+                <p class="subtitle" id="reveal-player-title"
+                    style="font-weight: 800; color: var(--primary-light); font-size: 1.1rem; margin-bottom: 5px;">كلمة
+                    اللاعب ..</p>
+                <p class="subtitle" id="reveal-instruction">انقر للقلب والكشف عن دورك</p>
+            </header>
+
+            <div class="role-reveal-scene">
+                <div class="role-reveal-box" id="reveal-card">
+
+                    <!-- Front of Card (Unrevealed) -->
+                    <div class="card-face card-front" id="card-front-face">
+                        <div class="pulse-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 3h6v6"></path>
+                                <path d="M9 21H3v-6"></path>
+                                <path d="M21 3l-7 7"></path>
+                                <path d="M3 21l7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="role-initial-text"
+                            style="color: var(--text-muted); font-size: 1.3rem; font-weight: 700;">اضغط للقلب</div>
+                    </div>
+
+                    <!-- Back of Card (Revealed) -->
+                    <div class="card-face card-back" id="card-back-face">
+                        <div id="role-category"
+                            style="color: var(--primary-light); font-weight: 800; font-size: 1rem; margin-bottom: 4px;">
+                        </div>
+                        <div id="role-title" style="color: var(--text-muted); font-size: 0.9rem;">أنت</div>
+                        <div id="role-word" class="role-word word-anim">...</div>
+                        <div id="role-word-desc"
+                            style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; text-align: center; padding: 0 16px; font-weight: 600; display: none;">
+                        </div>
+                        <div id="role-subtext"
+                            style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; display: none; text-align: center; padding: 0 10px;">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary hidden" id="done-reveal-btn">فهمت!</button>
+        </div>
+
+        <!-- Random Starter Pick Screen -->
+        <div id="screen-starter-pick" class="screen">
+            <header>
+                <h1>من سيبدأ؟</h1>
+                <p class="subtitle">اختيار لاعب عشوائي لبدء النقاش</p>
+            </header>
+
+            <div class="starter-card">
+                <div class="starter-label">اللاعب</div>
+                <div id="starter-number-display" class="starter-number">?</div>
+                <div id="starter-name-label"
+                    style="font-size: 1.5rem; font-weight: 800; color: white; margin-top: 10px; opacity: 0;">جاهز؟</div>
+            </div>
+
+            <button class="btn-main btn-primary" id="start-discussion-btn" style="margin-top: auto; display: none;">ابدأ
+                النقاش</button>
+        </div>
+
+        <!-- Voting/Game Context Screen -->
+        <div id="screen-game" class="screen">
+            <header>
+                <h1>مرحلة النقاش</h1>
+                <p class="subtitle">من هو المحتال؟ تناقشوا الآن</p>
+            </header>
+
+            <div class="card-group text-center">
+                <span class="section-label">تلميح اللعبة</span>
+                <div id="game-word-hint" style="font-size: 2rem; font-weight: 950; color: var(--primary-light);">؟؟؟؟
+                </div>
+            </div>
+
+            <div class="card-group text-center"
+                style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;">
+                <span class="section-label">الوقت المتبقي</span>
+                <div id="discussion-timer" class="timer-display">00:00</div>
+                <div class="timer-controls">
+                    <button class="btn-half btn-success" id="start-timer-btn"> بدء</button>
+                    <button class="btn-half btn-danger" id="stop-timer-btn" disabled> إيقاف</button>
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary" id="start-voting-btn">انتقال للتصويت</button>
+        </div>
+
+        <!-- Voting Screen -->
+        <div id="screen-voting" class="screen">
+            <header>
+                <h1>مرحلة التصويت</h1>
+                <p class="subtitle">صوّت للاعب الذي تعتقد أنه المحتال</p>
+            </header>
+
+            <div class="results-container" id="voting-list">
+                <!-- Players dynamic here -->
+            </div>
+
+            <button class="btn-main btn-primary hidden" id="confirm-vote-btn">تأكيد التصويت</button>
+        </div>
+
+        <!-- Voting Reveal Screen -->
+        <div id="screen-voting-reveal" class="screen">
+            <header>
+                <h1>نتيجة التصويت</h1>
+            </header>
+
+            <div class="card-group text-center" style="margin: 30px 0;">
+                <div id="voting-result-title" style="font-size: 2rem; font-weight: 900; margin-bottom: 10px;">...</div>
+                <div id="voting-result-text" style="color: var(--text-muted); font-size: 1.1rem;">...</div>
+            </div>
+
+            <button class="btn-main btn-primary" id="next-phase-btn">التالي</button>
+        </div>
+
+        <!-- Spy Guessing Screen -->
+        <div id="screen-spy-guess" class="screen">
+            <header>
+                <h1>مرحلة الجاسوس</h1>
+                <p class="subtitle">أيها الجاسوس، خمن الكلمة لتفوز!</p>
+            </header>
+
+            <div class="card-group">
+                <span class="section-label">اختر الكلمة الصحيحة</span>
+                <div class="chip-grid categories" id="spy-word-options">
+                    <!-- Options dynamic here -->
+                </div>
+            </div>
+
+            <button class="btn-main btn-primary" id="spy-confirm-btn" disabled>تأكيد الاختيار</button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="screen-results" class="screen">
+            <header>
+                <h1 id="win-title">النتائج</h1>
+                <p class="subtitle" id="win-subtitle">...</p>
+            </header>
+
+            <div class="card-group" style="padding: 16px;" id="res-words-container">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span class="section-label" style="margin:0;">الكلمة الأصلية</span>
+                        <div id="res-original-word"
+                            style="font-weight: 800; font-size: 1.2rem; color: var(--primary-light);">...</div>
+                    </div>
+                    <div id="res-fake-word-group" style="display: none; text-align: left;">
+                        <span class="section-label" style="margin:0;">الكلمة المزيفة</span>
+                        <div id="res-fake-word" style="font-weight: 800; font-size: 1.2rem; color: var(--secondary);">
+                            ...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-container" id="results-list">
+                <!-- Results dynamic here -->
+            </div>
+
+            <button class="btn-main btn-primary" id="restart-btn">لعب مرة أخرى</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Word Database ---
+        const wordDatabase = [
+            // --- FOOD (الماكلة) ---
+            { cat: 'food', w1: 'كسكس', d1: 'أكلة جزائرية تقليدية من السميد', w2: 'شخشوخة', d2: 'أكلة تقليدية من العجين والمرق' },
+            { cat: 'food', w1: 'مقرونة', d1: 'نوع من العجائن (معكرونة)', w2: 'سباغيتي', d2: 'معكرونة طويلة ورفيعة' },
+            { cat: 'food', w1: 'دوبارة', d1: 'أكلة شعبية حارة بالحمص والفول', w2: 'لوبيا', d2: 'حبوب بيضاء تطبخ كمرق' },
+            { cat: 'food', w1: 'عدس', d1: 'حبوب بنية غنية بالحديد', w2: 'حمص', d2: 'حبوب صفراء تستخدم في الطبخ' },
+            { cat: 'food', w1: 'رفيس', d1: 'حلوى تقليدية من السميد والتمر', w2: 'بغرير', d2: 'فطائر مثقبة تسقى بالعسل' },
+            { cat: 'food', w1: 'غريبة', d1: 'حلوى جافة تذوب في الفم', w2: 'مقروط', d2: 'حلوى مقلية محشوة بالتمر' },
+            { cat: 'food', w1: 'فلان', d1: 'تحلية باردة بالبيض والحليب', w2: 'ياوورت', d2: 'حليب متخمر بنكهات مختلفة' },
+            { cat: 'food', w1: 'شاورما', d1: 'لحم مشوي يلف في الخبز', w2: 'كباب', d2: 'لحم مفروم مشوي على السيخ' },
+            { cat: 'food', w1: 'بيتزا', d1: 'عجينة دائرية مغطاة بالصلصة والجبن', w2: 'سندويش', d2: 'خبز محشو بمكونات مختلفة' },
+            { cat: 'food', w1: 'خبز', d1: 'غذاء أساسي يصنع من الدقيق', w2: 'مطلوع', d2: 'خبز تقليدي يطهى في الطاجين' },
+            { cat: 'food', w1: 'عصير', d1: 'مشروب مستخلص من الفواكه', w2: 'مشروب', d2: 'سائل يشرب للارتواء' },
+            { cat: 'food', w1: 'طاجين', d1: 'طبق تقليدي يطبخ في الفخار', w2: 'مرقة', d2: 'صلصة سائلة تطبخ فيها الخضار' },
+            { cat: 'food', w1: 'روز', d1: 'حبوب بيضاء صغيرة تطبخ كطبق', w2: 'فريك', d2: 'قمح أخضر مجروش لعمل الشوربة' },
+            { cat: 'food', w1: 'سمك', d1: 'حيوان مائي يؤكل', w2: 'سردين', d2: 'نوع صغير وشائع من الأسماك' },
+            { cat: 'food', w1: 'دجاج', d1: 'طائر يربى لأجل لحمه وبيضه', w2: 'لحم', d2: 'نسيج عضلي يؤكل من الحيوانات' },
+            { cat: 'food', w1: 'بيض', d1: 'منتج الدجاج يستخدم بكثرة في الطبخ', w2: 'أومليت', d2: 'بيض مخفوق ومقلي' },
+            { cat: 'food', w1: 'زبدة', d1: 'دهن مستخرج من الحليب', w2: 'مارغرين', d2: 'بديل نباتي للزبدة' },
+            { cat: 'food', w1: 'تمر', d1: 'ثمرة حلوة تنمو في النخيل', w2: 'موز', d2: 'فاكهة استوائية صفراء مقوسة' },
+            { cat: 'food', w1: 'تفاح', d1: 'فاكهة دائرية مقرمشة', w2: 'برتقال', d2: 'فاكهة حمضية غنية بفيتامين سي' },
+            { cat: 'food', w1: 'سلطة', d1: 'طبق بارد من الخضار المقطعة', w2: 'شوربة', d2: 'حساء ساخن يقدم كبداية' },
+            { cat: 'food', w1: 'حليب', d1: 'سائل أبيض غني بالكالسيوم', w2: 'كاكاو', d2: 'مسحوق يستخدم لصنع الشوكولاتة' },
+            { cat: 'food', w1: 'شاي', d1: 'مشروب ساخن يحضر من أوراق النبتة', w2: 'قهوة', d2: 'مشروب منبه أسود مائل للبني' },
+            { cat: 'food', w1: 'كعك', d1: 'حلوى مخبوزة دائرية', w2: 'بسكوي', d2: 'حلوى صغيرة وجافة ومقرمشة' },
+            { cat: 'food', w1: 'فريت', d1: 'بطاطا مقلية مقرمشة', w2: 'بورغر', d2: 'شطيرة لحم دائرية مع إضافات' },
+            { cat: 'food', w1: 'هريسة', d1: 'صلصة فلفل أحمر حارة', w2: 'مايونيز', d2: 'صلصة بيضاء كريمية من البيض والزيت' },
+            { cat: 'food', w1: 'كاتشب', d1: 'صلصة حمراء حلوة من الطماطم', w2: 'موستارد', d2: 'صلصة صفراء ذات طعم لاذع' },
+            { cat: 'food', w1: 'مربى', d1: 'فواكه مطبوخة مع السكر', w2: 'عسل', d2: 'سائل حلو لزج تنتجه النحل' },
+            { cat: 'food', w1: 'فطير', d1: 'عجينة رقيقة مسطحة', w2: 'كرواسون', d2: 'مخبوزات فرنسية هشة على شكل هلال' },
+            { cat: 'food', w1: 'بريوش', d1: 'خبز فرنسي حلو وغني بالزبدة', w2: 'بانيني', d2: 'سندويش إيطالي مضغوط ومحمص' },
+            { cat: 'food', w1: 'فلافل', d1: 'كرات حمص مقلية', w2: 'حمص', d2: 'حبوب صفراء تستخدم لعمل المتبل' },
+
+            // --- ANIMALS (الحيوانات) ---
+            { cat: 'animals', w1: 'كلب', d1: 'حيوان أليف وفي حارس', w2: 'قطوس', d2: 'القط، حيوان أليف منزلي' },
+            { cat: 'animals', w1: 'حمار', d1: 'حيوان صبر يستخدم للحمل', w2: 'بغل', d2: 'هجين بين الحصان والحمار' },
+            { cat: 'animals', w1: 'حصان', d1: 'حيوان قوي لركوب الخيل والسباق', w2: 'جمل', d2: 'سفينة الصحراء يتحمل العطش' },
+            { cat: 'animals', w1: 'خروف', d1: 'حيوان يؤخذ منه الصوف واللحم', w2: 'ماعز', d2: 'حيوان ذو قرون يؤخذ منه الحليب' },
+            { cat: 'animals', w1: 'ديك', d1: 'ذكر الدجاج يصيح في الفجر', w2: 'دجاجة', d2: 'طائر يربى لإنتاج البيض' },
+            { cat: 'animals', w1: 'بط', d1: 'طائر مائي بلسان عريض', w2: 'وز', d2: 'طائر مائي يشبه البط ولكنه أكبر' },
+            { cat: 'animals', w1: 'نحلة', d1: 'حشرة طائرة تنتج العسل', w2: 'ذبابة', d2: 'حشرة صغيرة مزعجة ومنتشرة' },
+            { cat: 'animals', w1: 'نملة', d1: 'حشرة صغيرة تعمل في جماعات', w2: 'صرصور', d2: 'حشرة زاحفة بنية اللون' },
+            { cat: 'animals', w1: 'حية', d1: 'زاحف طويل يتحرك بدون أطراف', w2: 'عقرب', d2: 'حيوان سام يمتلك ذيل لاسع' },
+            { cat: 'animals', w1: 'تمساح', d1: 'زاحف مائي ضخم ذو فك قوي', w2: 'سلحفاة', d2: 'زاحف بطيء ذو درع صلب' },
+            { cat: 'animals', w1: 'قرش', d1: 'سمكة مفترسة خطيرة في المحيطات', w2: 'حوت', d2: 'أضخم حيوان بحري على وجه الأرض' },
+            { cat: 'animals', w1: 'دلفين', d1: 'حيوان بحري ذكي وودود', w2: 'فقمة', d2: 'حيوان برمائي يعيش في المناطق الباردة' },
+            { cat: 'animals', w1: 'نمر', d1: 'قط بري ضخم مخطط ومفترس', w2: 'أسد', d2: 'ملك الغابة، حيوان مفترس ذو لبدة' },
+            { cat: 'animals', w1: 'فهد', d1: 'أسرع حيوان بري على الأرض', w2: 'ذيب', d2: 'الذئب الحيوان البري الذي يعوي' },
+            { cat: 'animals', w1: 'قرد', d1: 'حيوان ذكي يتسلق الأشجار', w2: 'غوريلا', d2: 'أكبر أنواع القردة ضخم وثقيل' },
+            { cat: 'animals', w1: 'كلب', d1: 'حيوان أليف وفي يعوي وينبح', w2: 'ثعلب', d2: 'حيوان بري معروف بالمكر والدهاء' },
+            { cat: 'animals', w1: 'غزال', d1: 'حيوان بري رشيق وجميل', w2: 'أرنب', d2: 'حيوان ذو أذنين طويلتين يحب الجزر' },
+            { cat: 'animals', w1: 'فأر', d1: 'قارض صغير يتسلل للمنازل', w2: 'جرذ', d2: 'قارض يشبه الفأر ولكنه أكبر حجما' },
+            { cat: 'animals', w1: 'بقرة', d1: 'حيوان داجن يعطينا الحليب', w2: 'ثور', d2: 'ذكر البقرة ضخم وقوي' },
+            { cat: 'animals', w1: 'حمامة', d1: 'طائر يرمز للسلام', w2: 'عصفور', d2: 'طائر صغير مغرد' },
+            { cat: 'animals', w1: 'نورس', d1: 'طائر مائي يعيش قرب الشواطئ', w2: 'بومة', d2: 'طائر جارح ليلي ذو عينين كبيرتين' },
+            { cat: 'animals', w1: 'ديك رومي', d1: 'طائر داجن كبير يؤكل في المناسبات', w2: 'بط', d2: 'طائر يسبح في البرك والبحيرات' },
+            { cat: 'animals', w1: 'جمل', d1: 'سفينة الصحراء يخزن الماء', w2: 'ناقة', d2: 'أنثى الجمل' },
+            { cat: 'animals', w1: 'حشرة', d1: 'كائن صغير ذو أرجل مفصلية', w2: 'دودة', d2: 'كائن زاحف رخوي وطويل' },
+            { cat: 'animals', w1: 'دعموص', d1: 'فرخ الضفدع صغير يعيش في الماء', w2: 'بعوضة', d2: 'حشرة صغيرة تمتص الدم' },
+            { cat: 'animals', w1: 'خنزير', d1: 'حيوان سمين وذو أنف أفطس', w2: 'كلب', d2: 'حيوان يعتمد عليه في الحراسة' },
+            { cat: 'animals', w1: 'حصان', d1: 'حيوان سريع يستخدم في الفروسية', w2: 'حمار', d2: 'حيوان للركوب وجر العربات' },
+            { cat: 'animals', w1: 'ذيب', d1: 'مفترس بري يعيش في قطعان', w2: 'نمر', d2: 'قط بري مفترس ذو فراء مخطط' },
+            { cat: 'animals', w1: 'أسد', d1: 'ملك الحيوانات المفترسة', w2: 'فهد', d2: 'أسرع الحيوانات المفترسة ركضا' },
+            { cat: 'animals', w1: 'قط', d1: 'حيوان منزلي أليف يموء', w2: 'نمر', d2: 'مفترس غابات ضخم مخطط' },
+
+            // --- OBJECTS (أشياء وأدوات) ---
+            { cat: 'objects', w1: 'شارجور', d1: 'الشاحن، أداة لشحن البطارية', w2: 'كابل', d2: 'سلك لتوصيل الكهرباء أو البيانات' },
+            { cat: 'objects', w1: 'سماعة', d1: 'أداة توضع على الأذن لسماع الصوت', w2: 'مايكرو', d2: 'الميكروفون لتسجيل أو تكبير الصوت' },
+            { cat: 'objects', w1: 'كلافيي', d1: 'لوحة المفاتيح التابعة للحاسوب', w2: 'سوري', d2: 'فأرة الحاسوب للتحكم في الشاشة' },
+            { cat: 'objects', w1: 'ساعة', d1: 'أداة لمعرفة الوقت', w2: 'منبه', d2: 'ساعة تصدر صوتا لإيقاظ النائم' },
+            { cat: 'objects', w1: 'كاشي', d1: 'قرص دواء للعلاج', w2: 'بلو', d2: 'اللون الأزرق' },
+            { cat: 'objects', w1: 'دفتر', d1: 'كراسة لتسجيل الملاحظات والدروس', w2: 'كتاب', d2: 'مجموعة من الأوراق المطبوعة للقراءة' },
+            { cat: 'objects', w1: 'قلم', d1: 'أداة تستخدم للكتابة والرسم', w2: 'ستيلو', d2: 'قلم حبر جاف' },
+            { cat: 'objects', w1: 'حقيبة', d1: 'وعاء لحمل الأشياء وحفظها', w2: 'ساك', d2: 'كيس أو حقيبة للظهر أو اليد' },
+            { cat: 'objects', w1: 'مفتاح', d1: 'أداة مخصصة لفتح الأقفال والأبواب', w2: 'قفل', d2: 'جهاز لإغلاق الأبواب بإحكام' },
+            { cat: 'objects', w1: 'باب', d1: 'مدخل أو مخرج للغرفة أو المبنى', w2: 'شباك', d2: 'نافذة للتهوية وإدخال الضوء' },
+            { cat: 'objects', w1: 'ضو', d1: 'مصدر الإنارة في المكان', w2: 'لامبة', d2: 'مصباح كهربائي يوفر الإضاءة' },
+            { cat: 'objects', w1: 'بطارية', d1: 'وحدة لتخزين الطاقة الكهربائية', w2: 'شارجور', d2: 'جهاز يعيد شحن طاقة البطارية' },
+            { cat: 'objects', w1: 'مروحة', d1: 'جهاز كهربائي يولد تيارا هوائيا', w2: 'كليماتيزور', d2: 'مكيف لضبط درجة حرارة الهواء' },
+            { cat: 'objects', w1: 'بطانية', d1: 'غطاء من القماش يبعث على الدفء', w2: 'مخدة', d2: 'وسادة تسند الرأس عند النوم' },
+            { cat: 'objects', w1: 'زرابي', d1: 'بساط منسوج يفرش على الأرضيات', w2: 'موكيت', d2: 'سجاد يغطي كامل أرضية الغرفة' },
+            { cat: 'objects', w1: 'صحن', d1: 'وعاء مسطح أو مجوف لتقديم الطعام', w2: 'كاس', d2: 'وعاء أسطواني لشرب السوائل' },
+            { cat: 'objects', w1: 'سكين', d1: 'أداة حادة تستخدم لتقطيع الطعام', w2: 'مغرف', d2: 'ملعقة كبيرة تستخدم لسكب الطعام' },
+            { cat: 'objects', w1: 'قدر', d1: 'وعاء عميق معدني يستخدم لطبخ الطعام', w2: 'مقلة', d2: 'وعاء مسطح يستخدم للقلي في الزيت' },
+            { cat: 'objects', w1: 'حوتة', d1: 'إسفنجة أو ليفة الاستحمام', w2: 'بانيو', d2: 'حوض يستعمل للاستحمام والغسيل' },
+            { cat: 'objects', w1: 'صابون', d1: 'مادة تستخدم لتنظيف اليدين والجسم', w2: 'شامبو', d2: 'سائل مخصص لغسل وتنظيف الشعر' },
+            { cat: 'objects', w1: 'موس', d1: 'أداة حادة لقص الشعر أو الحلاقة', w2: 'شفرة', d2: 'أداة دقيقة وحادة للحلاقة' },
+            { cat: 'objects', w1: 'فرشاة', d1: 'أداة لتسريح الشعر أو تنظيف الأسنان', w2: 'مشط', d2: 'أداة مسننة لتصفيف وفك تشابك الشعر' },
+            { cat: 'objects', w1: 'نظارات', d1: 'إطار بعدسات لتحسين الرؤية أو الحماية', w2: 'عدسات', d2: 'قطع دائرية صغيرة توضع على العين للرؤية' },
+            { cat: 'objects', w1: 'شنطة', d1: 'حقيبة تستخدم لحمل وتخزين الأغراض', w2: 'ساكادو', d2: 'حقيبة ظهر لحمل الأشياء الثقيلة' },
+            { cat: 'objects', w1: 'طابعة', d1: 'جهاز ينقل النصوص والصور إلى الورق', w2: 'سكانير', d2: 'جهاز يحول الورق إلى ملفات رقمية' },
+            { cat: 'objects', w1: 'USB', d1: 'قطعة صغيرة لتخزين ونقل البيانات', w2: 'ديسك دور', d2: 'القرص الصلب لتخزين ومسح البيانات' },
+            { cat: 'objects', w1: 'راوتر', d1: 'جهاز لتوزيع إشارة الإنترنت اللاسلكية', w2: 'مودام', d2: 'جهاز يحول الإشارة لشبكة إنترنت' },
+            { cat: 'objects', w1: 'مانيت', d1: 'أداة للتحكم في ألعاب الفيديو', w2: 'بلايستيشن', d2: 'جهاز ألعاب فيديو منزلي شهير' },
+            { cat: 'objects', w1: 'ريموت', d1: 'جهاز صغير للتحكم عن بعد بالإلكترونيات', w2: 'تلفازة', d2: 'جهاز لمشاهدة القنوات والبرامج' },
+            { cat: 'objects', w1: 'مكواة', d1: 'جهاز ساخن لكي الملابس وإزالة التجاعيد', w2: 'غسالة', d2: 'جهاز كهربائي يستخدم لغسل وتنظيف الثياب' },
+
+            // --- SPORTS (رياضة) ---
+            { cat: 'sports', w1: 'فوتبول', d1: 'كرة القدم، الرياضة الأشهر عالميا', w2: 'هاندبول', d2: 'كرة اليد، تلعب بتمرير الكرة' },
+            { cat: 'sports', w1: 'باسكات', d1: 'كرة السلة، رمي الكرة في السلة', w2: 'فولي', d2: 'الكرة الطائرة، ضرب الكرة فوق الشبكة' },
+            { cat: 'sports', w1: 'كروس', d1: 'سباق الجري في المناطق المفتوحة', w2: 'ماراطون', d2: 'سباق جري لمسافات طويلة جدا' },
+            { cat: 'sports', w1: 'كارديو', d1: 'تمارين رياضية تسرع نبض القلب', w2: 'مسكل', d2: 'تمارين كمال الأجسام وبناء العضلات' },
+            { cat: 'sports', w1: 'بوش اب', d1: 'تمرين الضغط لتقوية الصدر والذراعين', w2: 'بلانك', d2: 'تمرين ثبات قوي لشد عضلات البطن' },
+            { cat: 'sports', w1: 'سكوات', d1: 'تمرين القرفصاء لتقوية عضلات الساقين', w2: 'لونج', d2: 'تمرين الاندفاع لتقوية الفخذين' },
+            { cat: 'sports', w1: 'دمبل', d1: 'أوزان حرة صغيرة تحمل باليد', w2: 'بار', d2: 'عمود حديدي طويل تحمل عليه الأوزان' },
+            { cat: 'sports', w1: 'تريدميل', d1: 'جهاز المشي أوالجري الكهربائي', w2: 'بيسيكلات', d2: 'الدراجة الهوائية، وسيلة نقل ورياضة' },
+            { cat: 'sports', w1: 'كوتش', d1: 'المدرب الرياضي الذي يوجه اللاعبين', w2: 'لاعب', d2: 'الشخص الذي يمارس رياضة معينة' },
+            { cat: 'sports', w1: 'ماتش', d1: 'المباراة أو المنافسة الرياضية', w2: 'تدريب', d2: 'فترة التمرين والاستعداد للمنافسة' },
+            { cat: 'sports', w1: 'هدف', d1: 'إدخال الكرة في المرمى لتسجيل نقطة', w2: 'بنالتي', d2: 'ضربة الجزاء بعد ارتكاب خطأ معين' },
+            { cat: 'sports', w1: 'كارتون', d1: 'بطاقة ملونة ينذر بها الحكم', w2: 'فول', d2: 'خطأ يرتكبه اللاعب أثناء المباراة' },
+            { cat: 'sports', w1: 'شوط', d1: 'جزء زمني من المباراة الرياضية', w2: 'وقت', d2: 'الزمن المحدد للمباراة أو الشوط' },
+            { cat: 'sports', w1: 'ملعب', d1: 'مساحة مخصصة للعب وممارسة الرياضة', w2: 'قاعة', d2: 'مكان مغلق لممارسة الرياضات المتنوعة' },
+            { cat: 'sports', w1: 'جيم', d1: 'صالة كمال الأجسام والألعاب الرياضية', w2: 'كروسفيت', d2: 'رياضة شاملة للتمارين عالية الكثافة' },
+            { cat: 'sports', w1: 'سباحة', d1: 'الحركة والتحرك عبر الماء', w2: 'غوص', d2: 'السباحة تحت سطح الماء بعمق' },
+            { cat: 'sports', w1: 'ركوب', d1: 'امتطاء الخيل أو الدراجة', w2: 'قفز', d2: 'الانطلاق في الهواء بالاعتماد على القدمين' },
+            { cat: 'sports', w1: 'ميدالية', d1: 'قلادة معدنية تعطى للفائز في المسابقة', w2: 'كأس', d2: 'جائزة بشكل كأس تمنح للفريق الفائز' },
+            { cat: 'sports', w1: 'بطولة', d1: 'منافسة كبرى لتحديد الأفضل بين الفرق', w2: 'دوري', d2: 'منافسة رياضية مستمرة على مدار موسم' },
+            { cat: 'sports', w1: 'منتخب', d1: 'فريق رياضي يمثل وطنه كاملاً', w2: 'نادي', d2: 'فريق رياضي محلي يمثل مدينة أو جهة' },
+            { cat: 'sports', w1: 'حكم', d1: 'الشخص الذي يدير ويضبط المباراة', w2: 'مساعد', d2: 'من يساعد الحكم في اتخاذ القرارات' },
+            { cat: 'sports', w1: 'تسلل', d1: 'مخالفة تجاوز اللاعب لخط الدفاع المنافس', w2: 'ضربة', d2: 'ركلة الكرة أو توجيهها بقوة' },
+            { cat: 'sports', w1: 'تمرير', d1: 'مناولة الكرة إلى لاعب آخر في الفريق', w2: 'تسديد', d2: 'توجيه ضربة قوية للكرة نحو المرمى' },
+            { cat: 'sports', w1: 'هجوم', d1: 'محاولة التقدم وتسجيل الأهداف', w2: 'دفاع', d2: 'التصدي للاعبي الخصم ومنعهم من التسجيل' },
+            { cat: 'sports', w1: 'لياقة', d1: 'القدرة البدنية والصحية الجيدة', w2: 'سرعة', d2: 'القدرة على الركض والتحرك في وقت قصير' },
+            { cat: 'sports', w1: 'توازن', d1: 'القدرة على الثبات في موقف معين', w2: 'قوة', d2: 'قوة العضلات والقدرة على التحمل' },
+            { cat: 'sports', w1: 'مضمار', d1: 'مسار مخصص لسباقات الجري أو الخيل', w2: 'حلبة', d2: 'مساحة مخصصة لرياضات النزال كالملاكمة' },
+            { cat: 'sports', w1: 'سباق', d1: 'منافسة على الركض أو الوصول أولاً', w2: 'منافسة', d2: 'صراع رياضي بين أطراف للفوز المنشود' },
+            { cat: 'sports', w1: 'مدرب', d1: 'الشخص الذي يخطط ويوجه الفريق', w2: 'لاعب', d2: 'الشخص المشارك في ممارسة الرياضة' },
+            { cat: 'sports', w1: 'احتياط', d1: 'اللاعبون الجالسون بانتظار دورهم للعب', w2: 'أساسي', d2: 'اللاعب المعتمد عليه في التشكيلة الأساسية' },
+
+            // --- BODY (الجسم) ---
+            { cat: 'body', w1: 'راس', d1: 'الجزء العلوي من الجسم يحوي المخ', w2: 'وجه', d2: 'الجزء الأمامي من الرأس فيه الملامح' },
+            { cat: 'body', w1: 'عين', d1: 'عضو الإبصار والنظر', w2: 'ودن', d2: 'عضو السمع والتقاط الأصوات' },
+            { cat: 'body', w1: 'نيف', d1: 'الأنف، عضو الشم والتنفس', w2: 'فم', d2: 'عضو التذوق والأكل والكلام' },
+            { cat: 'body', w1: 'سنان', d1: 'تستخدم لتقطيع وطحن الطعام', w2: 'لسان', d2: 'عضو التذوق والبلع في الفم' },
+            { cat: 'body', w1: 'رقبة', d1: 'العنق، يربط الرأس بالجذع', w2: 'كتف', d2: 'الجزء الواصل بين العنق والجذع والذراع' },
+            { cat: 'body', w1: 'ذراع', d1: 'الطرف العلوي من الكتف لليد', w2: 'يد', d2: 'نهاية الذراع، تستعمل للمسك والقبض' },
+            { cat: 'body', w1: 'صبع', d1: 'أحد أطراف اليد أو القدم', w2: 'ظفر', d2: 'الجزء الصلب في نهاية الإصبع' },
+            { cat: 'body', w1: 'صدر', d1: 'الجزء الأمامي من الجذع', w2: 'ظهر', d2: 'الجزء الخلفي من الجذع' },
+            { cat: 'body', w1: 'كرش', d1: 'منطقة البطن والمعدة', w2: 'ظهر', d2: 'الجهة الخلفية للجسم' },
+            { cat: 'body', w1: 'رجل', d1: 'الطرف السفلي الممتد من الفخذ', w2: 'ركبة', d2: 'المفصل القوي في منتصف الساق' },
+            { cat: 'body', w1: 'فخذ', d1: 'الجزء العلوي من الرجل', w2: 'ساق', d2: 'الجزء بين الركبة والقدم' },
+            { cat: 'body', w1: 'كعب', d1: 'الجزء الخلفي السفلي من القدم', w2: 'قدم', d2: 'أسفل الساق، للوقوف والمشي' },
+            { cat: 'body', w1: 'عضلة', d1: 'نسيج لحمي يحرك الهيكل العظمي', w2: 'عظم', d2: 'الأجزاء الصلبة التي تدعم الجسم' },
+            { cat: 'body', w1: 'دم', d1: 'السائل الأحمر الذي يدور في العروق', w2: 'جلد', d2: 'الطبقة الخارجية التي تغطي الجسم كله' },
+            { cat: 'body', w1: 'شعر', d1: 'ينمو على فروة الرأس وأماكن أخرى', w2: 'لحية', d2: 'الشعر النابت على الذقن والخدين' },
+            { cat: 'body', w1: 'مخ', d1: 'عضو التفكير والتحكم في داخل الجمجمة', w2: 'قلب', d2: 'العضلة التي تضخ الدم لكامل الجسم' },
+            { cat: 'body', w1: 'عينين', d1: 'عضوا الرؤية والبصر', w2: 'حواجب', d2: 'خط الشعر الموجود فوق العيون' },
+            { cat: 'body', w1: 'رموش', d1: 'الأشعار الصغيرة في جفون العيون', w2: 'جبهة', d2: 'الجزء العلوي والمسطح من الوجه' },
+            { cat: 'body', w1: 'خشم', d1: 'الأنف في لهجات معينة', w2: 'فم', d2: 'فتحة التغذية والنطق في الوجه' },
+            { cat: 'body', w1: 'دقن', d1: 'الجزء الأسفل من الوجه تحت الفم', w2: 'لحية', d2: 'شعر الوجه عند الرجال' },
+            { cat: 'body', w1: 'ضلوع', d1: 'عظام قفص الصدر التي تحمي القلب', w2: 'عمود فقري', d2: 'سلسلة العظام في الظهر لدعم القامة' },
+            { cat: 'body', w1: 'كتاف', d1: 'مفصل أعلى الذراعين', w2: 'صدر', d2: 'المنطقة الحاوية للقلب والرئتين' },
+            { cat: 'body', w1: 'كف', d1: 'باطن اليد', w2: 'يد', d2: 'الجزء الذي نستخدمه للملامسة والمسك' },
+            { cat: 'body', w1: 'أصابع', d1: 'أطراف متفرعة للقبض في اليد', w2: 'كف', d2: 'الجهة الداخلية المسطحة لليد' },
+            { cat: 'body', w1: 'ركبة', d1: 'مفصل يفصل بين الفخذ والساق', w2: 'ساق', d2: 'مابين الركبة ومفصل القدم' },
+            { cat: 'body', w1: 'كعب', d1: 'العظمة البارزة في آخر القدم', w2: 'رجل', d2: 'الطرف بأكمله المخصص للوقوف والمشي' },
+            { cat: 'body', w1: 'جلد', d1: 'الغلاف الخارجي والحساس للجسم', w2: 'شعر', d2: 'خيوط بروتينية تنمو من الجلد' },
+            { cat: 'body', w1: 'دماغ', d1: 'مركز الجهاز العصبي والتحكم', w2: 'مخ', d2: 'القسم الأكبر من الدماغ للتفكير' },
+            { cat: 'body', w1: 'قلب', d1: 'عضو حيوي لاستمرار تدفق الدم', w2: 'رئة', d2: 'عضو التنفس ومبادلة الأكسجين' },
+            { cat: 'body', w1: 'معدة', d1: 'كيس هضمي في البطن لمعالجة الطعام', w2: 'كبد', d2: 'عضو كبير يخلص الجسم من السموم' },
+
+            // --- PLACES (بلايص) ---
+            { cat: 'places', w1: 'وهران', d1: 'مدينة جزائرية ساحلية كبرى، الباهية', w2: 'دزاير', d2: 'العاصمة الجزائرية، مدينة بيضاء' },
+            { cat: 'places', w1: 'سطيف', d1: 'مدينة التجارة وعاصمة الهضاب العليا', w2: 'تيزي', d2: 'تيزي وزو، عاصمة الثقافة الأمازيغية' },
+            { cat: 'places', w1: 'بجاية', d1: 'مدينة ساحلية وجبلية ذات طبيعة خلابة', w2: 'جيجل', d2: 'مدينة ساحلية يكسوها الكورنيش والبحر' },
+            { cat: 'places', w1: 'تلمسان', d1: 'لؤلؤة الغرب، عاصمة التاريخ والفن', w2: 'معسكر', d2: 'مدينة الأمير عبد القادر، عاصمة تاريخية' },
+            { cat: 'places', w1: 'الجزائر', d1: 'الجمهورية الجزائرية، أكبر بلد عربي', w2: 'تونس', d2: 'البلد المجاور للجزائر من الشرق' },
+            { cat: 'places', w1: 'المغرب', d1: 'المملكة المجاورة من الجهة الغربية', w2: 'فرنسا', d2: 'دولة أوروبية تطل ضفتها على البحر المتوسط' },
+            { cat: 'places', w1: 'إسبانيا', d1: 'دولة أوروبية عاصمتها مدريد', w2: 'إيطاليا', d2: 'دولة أوروبية شهيرة بالباستا وعاصمتها روما' },
+            { cat: 'places', w1: 'حومة', d1: 'الحي السكني أو المنطقة الشعبية', w2: 'حي', d2: 'تجمع للمنازل والمباني السكنية' },
+            { cat: 'places', w1: 'شارع', d1: 'الطريق الواسع لمرور المركبات والناس', w2: 'زنقة', d2: 'شارع ضيق أو ممشى مغلق بين المنازل' },
+            { cat: 'places', w1: 'دار', d1: 'المنزل أو المكان الذي تسكن فيه العائلة', w2: 'فيلا', d2: 'منزل كبير ومنفصل ذو طوابق وحديقة' },
+            { cat: 'places', w1: 'عمارة', d1: 'مبنى سكني شاهق يضم شققا ومصاعد', w2: 'سطح', d2: 'أعلى جزء مكشوف في المبنى أو المنزل' },
+            { cat: 'places', w1: 'غرفة', d1: 'حجرة مغلقة ومنفصلة في المنزل', w2: 'صالون', d2: 'غرفة استقبال الضيوف والجلوس' },
+            { cat: 'places', w1: 'مطبخ', d1: 'مكان مجهز لتحضير وطهى الطعام', w2: 'حمام', d2: 'غرفة مخصصة للاستحمام والغسيل' },
+            { cat: 'places', w1: 'مدرسة', d1: 'مؤسسة تعليمية لتدريس الأطفال والشباب', w2: 'جامعة', d2: 'مؤسسة للتعليم العالي والدراسات الأكاديمية' },
+            { cat: 'places', w1: 'جامع', d1: 'المسجد الكبير لإقامة الصلوات', w2: 'كنيسة', d2: 'مكان عبادة مخصص للمسيحيين' },
+            { cat: 'places', w1: 'قهوة', d1: 'المقهى الشعبي لتقديم القهوة والشاي', w2: 'مطعم', d2: 'مكان يقدم وجبات الطعام للزبائن' },
+            { cat: 'places', w1: 'محل', d1: 'دكان صغير لبيع البضائع المحددة', w2: 'سوق', d2: 'مكان مفتوح يجمع العديد من المحلات والبسطات' },
+            { cat: 'places', w1: 'مول', d1: 'مركز تسوق تجاري كبير ومغلق', w2: 'مارشي', d2: 'السوق الشعبي اليومي للخضار والمعروضات' },
+            { cat: 'places', w1: 'حديقة', d1: 'مساحة خضراء مجهزة بالورود وألعاب الأطفال', w2: 'غابة', d2: 'مساحة شاسعة كثيفة الأشجار والحيوانات' },
+            { cat: 'places', w1: 'بحر', d1: 'مساحة مياه طبيعية مالحة وكبيرة', w2: 'جبل', d2: 'تضاريس عالية ومرتفعة عن سطح الأرض' },
+            { cat: 'places', w1: 'صحراء', d1: 'مناطق رملية حارة وقاحلة مترامية الأطراف', w2: 'واحة', d2: 'منطقة خصبة ذات أشجار وسط رمال الصحراء' },
+            { cat: 'places', w1: 'مطار', d1: 'محطة مخصصة لإقلاع وهبوط الطائرات والسفر', w2: 'ميناء', d2: 'مساحة تابعة للبحر مخصصة لرسو السفن' },
+            { cat: 'places', w1: 'محطة', d1: 'مكان لركوب المسافرين الحافلات أوالقطار', w2: 'موقف', d2: 'مكان مخصص لركن وإيقاف السيارات' },
+            { cat: 'places', w1: 'فندق', d1: 'مبنى ضيافة ومبيت للمسافرين والزوار', w2: 'نزل', d2: 'دار ضيافة شعبية واقتصادية للمبيت' },
+            { cat: 'places', w1: 'مستشفى', d1: 'مركز طبي متكامل لمعالجة حالات المرضى', w2: 'عيادة', d2: 'مبنى أو غرفة مخصصة للمعاينة الطبية والفحص' },
+            { cat: 'places', w1: 'صيدلية', d1: 'محل لبيع الأدوية والمستلزمات الطبية', w2: 'مخبر', d2: 'معمل ومكان إجراء تحاليل طبية وعلمية' },
+            { cat: 'places', w1: 'ملعب', d1: 'ميدان مسور تقام على أرضه ممارسات الرياضية', w2: 'قاعة', d2: 'بناء داخلي واسع لإقامة التظاهرات والمناسبات' },
+            { cat: 'places', w1: 'مسرح', d1: 'خشبة ومكان لأداء التمثيليات والمسرحيات', w2: 'سينما', d2: 'صالة مغلقة لعرض ومشاهدة الأفلام والأشرطة' },
+            { cat: 'places', w1: 'بنك', d1: 'مصرف ومؤسسة مالية تحفظ نقود ومدخرات المواطن', w2: 'بريد', d2: 'مؤسسة إرسال طرود رسائل وتحويل أموال' },
+            { cat: 'places', w1: 'إدارة', d1: 'هيئة عامة مختصة بتنظيم وتسوية معاملات', w2: 'بلدية', d2: 'وحدة إدارية تعنى بشؤون المدينة والمواطنين' },
+
+            // --- JOBS (مهن وخدمات) ---
+            { cat: 'jobs', w1: 'طبيب', d1: 'يشخص الأمراض ويعالج المرضى', w2: 'جراح', d2: 'طبيب مختص في إجراء العمليات الجراحية الدقيقة' },
+            { cat: 'jobs', w1: 'ممرض', d1: 'يساعد الطبيب ويسهر على راحة المريض وعلاجه', w2: 'صيدلي', d2: 'مختص يحضر ويصرف الأدوية للمرضى' },
+            { cat: 'jobs', w1: 'شرطي', d1: 'رجل الأمن يسهر على حفظ النظام وتطبيق القانون', w2: 'دركي', d2: 'عنصر في قوات الدرك الوطني لحفظ أمن المناطق' },
+            { cat: 'jobs', w1: 'عسكري', d1: 'فرد ينتمي للقوات المسلحة للدفاع عن الوطن', w2: 'حارس', d2: 'شخص مكلف بمراقبة وحماية منشأة أو مكان' },
+            { cat: 'jobs', w1: 'أستاذ', d1: 'معلم ومربي يعمل في التدريس ونقل المعرفة', w2: 'معلم', d2: 'مربي يعلم الأطفال في المراحل الدراسية والابتدائية' },
+            { cat: 'jobs', w1: 'مدير', d1: 'المسؤول الأول و الموجه لإدارة عمل المؤسسة', w2: 'مراقب', d2: 'شخص مكلف بمتابعة ومراجعة سير عمل وسلوكيات' },
+            { cat: 'jobs', w1: 'سائق', d1: 'الشخص الذي يقود ويمتهن قيادة المركبات', w2: 'طاكسيور', d2: 'سائق سيارة أجرة لغرض نقل الأفراد' },
+            { cat: 'jobs', w1: 'ميكانيكي', d1: 'خبير في إصلاح أعطال ومحركات السيارات والآليات', w2: 'كهربائي', d2: 'تغني بتركيب أو استكشاف وإصلاح أعطال شبكات الكهرباء' },
+            { cat: 'jobs', w1: 'بناء', d1: 'حرفي يتولى إقامة وإنشاء الجدران والمباني', w2: 'دهان', d2: 'حرفي يطلي الجدران والأبنية ليضفي لمسات جمالية' },
+            { cat: 'jobs', w1: 'نجار', d1: 'حرفي ماهر يعمل في قص ونحت وتجميع الأخشاب', w2: 'حداد', d2: 'يصنع ويطوع المعادن لتصنيع الأبواب والشبابيك' },
+            { cat: 'jobs', w1: 'طباخ', d1: 'المسؤول عن تحضير وإعداد الوجبات والأطباق', w2: 'خباز', d2: 'يتقن مهنة العجن وخبز أنواع الخبز والحلويات' },
+            { cat: 'jobs', w1: 'نادل', d1: 'جرسون ومقدم مشروبات وطلبات طعام في المطاعم', w2: 'قهواجي', d2: 'محضر ومقدم القهوة والشاي للزبائن داخل المقاهي' },
+            { cat: 'jobs', w1: 'تاجر', d1: 'رجل الأعمال والمكلف بشراء وبيع السلع للتربح', w2: 'بائع', d2: 'يتعامل مباشرة من وراء المكتب و يعرض السلع للعملاء' },
+            { cat: 'jobs', w1: 'محاسب', d1: 'ينظم الحسابات المالية ويتتبع الأرصدة والمصروفات', w2: 'موظف', d2: 'شخص يعمل لقاء أجر ويؤدي المهام الإدارية بالمؤسسة' },
+            { cat: 'jobs', w1: 'مهندس', d1: 'مختص يضع التصاميم والخرائط لإنجاز ومتابعة المشاريع', w2: 'تقني', d2: 'صاحب مهارات تطبيقية يتعامل مع الآلات والمعدات المعقدة' },
+            { cat: 'jobs', w1: 'مطور', d1: 'يطور البرامج و الأنظمة ويبتكر حلول للتطبيقات', w2: 'مبرمج', d2: 'يكتب سطور الأكواد بلغات البرمجة ويصمم البرمجيات' },
+            { cat: 'jobs', w1: 'مصمم', d1: 'فنان يبدع في تنظيم الأشكال وإضفاء لمسات الإبداع', w2: 'مصور', d2: 'بستعمل الكاميرات ليلتقط مشاهد وصور احترافية' },
+            { cat: 'jobs', w1: 'صحفي', d1: 'يتقصى الحقائق ويكتب الأخبار لوسائل الإعلام المختلفة', w2: 'مذيع', d2: 'يقدم ويدير الحوارات والبرامج في الإذاعة أو الشاشة' },
+            { cat: 'jobs', w1: 'فلاح', d1: 'المزارع العامل في الحقول للزراعة ورعاية الأراضي', w2: 'مربي', d2: 'يعتني بتربية المواشي والدواجن لأغراض الإنتاج' },
+            { cat: 'jobs', w1: 'صياد', d1: 'يمتهن اصطياد الأسماك أو مطاردة الحيوانات', w2: 'بحار', d2: 'يعمل على متن المراكب والسفن في عروض البحر' },
+            { cat: 'jobs', w1: 'عامل', d1: 'من يبذل المجهود المادي العضلي نظير أجرة في المصانع', w2: 'حمال', d2: 'يساعد في نقل وحمل الأمتعة والصناديق والبضائع الثقيلة' },
+            { cat: 'jobs', w1: 'حلاق', d1: 'يتقن مهنة قص وتهذيب شعر الرأس واللحية', w2: 'تجميل', d2: 'يهتم بتزيين المرأة وبوضع مستحضرات وماكياج التجميل' },
+            { cat: 'jobs', w1: 'خياط', d1: 'يفصل الأقمشة ويحيك الملبوسات والفساتين والثياب', w2: 'مصمم', d2: 'مبتكر أزياء وموديلات يرسم خطوط وتصاميم حديثة' },
+            { cat: 'jobs', w1: 'مغني', d1: 'يؤدي الأغاني بصوته ويطرب الجمهور والمستمعين', w2: 'موسيقي', d2: 'فنان محترف في العزف واللعب على الآلات الموسيقية' },
+            { cat: 'jobs', w1: 'ممثل', d1: 'يتقمص الأدوار وأداء الشخصيات في السينما أوالمسرح', w2: 'كوميدي', d2: 'شخص فكاهي يصنع الضحك ويرسم بسمة الجمهور' },
+            { cat: 'jobs', w1: 'يوتوبر', d1: 'يصنع محتوى فيديو ترفيهي أو وثائقي ليضعه بمنصة يوتيوب', w2: 'تيكتوكر', d2: 'مؤثر ينشئ وينشر الفيديوهات القصيرة في منصة التيكتوك' },
+            { cat: 'jobs', w1: 'ستريمر', d1: 'ببث ويلعب ألعاب الفيديو ويتفاعل مع المتابعين مباشرة', w2: 'لاعب', d2: 'يمارس إحدى أنواع الرياضة ضمن صفوف فرق محترفة' },
+            { cat: 'jobs', w1: 'حارس', d1: 'مهمته حراسة الأشخاص أوالمباني وأصول الشركات لحمايتها', w2: 'منظف', d2: 'يعتني بنظافة المكان من أوساخ وقمامة وتوفير محيط صحي' },
+            { cat: 'jobs', w1: 'ساعي', d1: 'ساعي البريد يوصل الرسائل والبطاقات والطرد للعنوان', w2: 'موزع', d2: 'موزع طلبيات وبضائع يقوم بتسليمها إلى مكان المشتري' },
+            { cat: 'jobs', w1: 'موظف', d1: 'شخص مسجل بدوام في مؤسسة لإنجاز خدمات إدارية', w2: 'مدير', d2: 'شخص قيادي يتولى إدارة العاملين وسير التنظيم بالمؤسسة' },
+
+
+            // body_desc (50 entries)
+            { cat: 'body_desc', w1: 'رأس كبير', d1: 'رأس ضخم الحجم', w2: 'كعب عريض', d2: 'كعب القدم عريض', isMulti: true },
+            { cat: 'body_desc', w1: 'رأس صغير', d1: 'رأس صغير الحجم', w2: 'كعب ضيق', d2: 'كعب القدم ضيق', isMulti: true },
+            { cat: 'body_desc', w1: 'عيون زرقاء', d1: 'عيون زرقاء اللون', w2: 'ركبة متورمة', d2: 'ركبة منتفخة', isMulti: true },
+            { cat: 'body_desc', w1: 'عيون خضراء', d1: 'عيون خضراء اللون', w2: 'ركبة سليمة', d2: 'ركبة طبيعية', isMulti: true },
+            { cat: 'body_desc', w1: 'عيون بنية', d1: 'عيون بنية اللون', w2: 'فخذ سميك', d2: 'فخذ غليظ', isMulti: true },
+            { cat: 'body_desc', w1: 'أنف طويل', d1: 'أنف طويل ممتد', w2: 'فخذ رفيع', d2: 'فخذ نحيف', isMulti: true },
+            { cat: 'body_desc', w1: 'أنف قصير', d1: 'أنف قصير غير بارز', w2: 'عضلات ظاهرة', d2: 'عضلات واضحة', isMulti: true },
+            { cat: 'body_desc', w1: 'أذنان كبيرتان', d1: 'أذنان كبيرتا الحجم', w2: 'عضلات مخفية', d2: 'عضلات غير ظاهرة', isMulti: true },
+            { cat: 'body_desc', w1: 'أذنان صغيرتان', d1: 'أذنان صغيرتا الحجم', w2: 'جلد جاف', d2: 'بشرة جافة', isMulti: true },
+            { cat: 'body_desc', w1: 'شفاه حمراء', d1: 'شفاه حمراء اللون', w2: 'جلد دهني', d2: 'بشرة دهنية', isMulti: true },
+            { cat: 'body_desc', w1: 'شفاه وردية', d1: 'شفاه وردية اللون', w2: 'وشوم كثيرة', d2: 'كثير من الرسوم على الجلد', isMulti: true },
+            { cat: 'body_desc', w1: 'أسنان بيضاء', d1: 'أسنان بيضاء ناصعة', w2: 'وشوم قليلة', d2: 'عدد قليل من الوشوم', isMulti: true },
+            { cat: 'body_desc', w1: 'أسنان صفراء', d1: 'أسنان صفراء بسبب الإهمال', w2: 'ندبة عميقة', d2: 'أثر جرح عميق', isMulti: true },
+            { cat: 'body_desc', w1: 'شعر أسود', d1: 'شعر أسود اللون', w2: 'ندبة سطحية', d2: 'أثر جرح سطحي', isMulti: true },
+            { cat: 'body_desc', w1: 'شعر أشقر', d1: 'شعر أشقر فاتح', w2: 'نمش كثير', d2: 'بقع كثيرة على الوجه', isMulti: true },
+            { cat: 'body_desc', w1: 'شعر أحمر', d1: 'شعر أحمر كالجزر', w2: 'نمش قليل', d2: 'بقع قليلة', isMulti: true },
+            { cat: 'body_desc', w1: 'شعر مجعد', d1: 'شعر بشكل تجعيدات', w2: 'تجاعيد كثيرة', d2: 'خطوط كثيرة بالوجه', isMulti: true },
+            { cat: 'body_desc', w1: 'شعر أملس', d1: 'شعر ناعم مستقيم', w2: 'تجاعيد قليلة', d2: 'خطوط قليلة', isMulti: true },
+            { cat: 'body_desc', w1: 'حاجب كثيف', d1: 'حاجب غزير الشعر', w2: 'غمازات واضحة', d2: 'حفر ظاهرة عند الابتسام', isMulti: true },
+            { cat: 'body_desc', w1: 'حاجب رفيع', d1: 'حاجب رقيق الشعر', w2: 'غمازات خفيفة', d2: 'حفر غير بارزة', isMulti: true },
+            { cat: 'body_desc', w1: 'رموش طويلة', d1: 'رموش ممتدة', w2: 'لحية طويلة', d2: 'شعر وجه طويل', isMulti: true },
+            { cat: 'body_desc', w1: 'رموش قصيرة', d1: 'رموش قصيرة غير واضحة', w2: 'لحية قصيرة', d2: 'شعر وجه قصير', isMulti: true },
+            { cat: 'body_desc', w1: 'خدود ممتلئة', d1: 'خدود مكتنزة', w2: 'شارب كثيف', d2: 'شارب غزير', isMulti: true },
+            { cat: 'body_desc', w1: 'خدود غائرة', d1: 'خدود مجوفة', w2: 'شارب رفيع', d2: 'شارب خفيف', isMulti: true },
+            { cat: 'body_desc', w1: 'ذقن بارز', d1: 'ذقن واضح للغاية', w2: 'حواجب مقوسة', d2: 'حواجب على شكل قوس', isMulti: true },
+            { cat: 'body_desc', w1: 'ذقن مدبب', d1: 'ذقن بشكل مدبب', w2: 'حواجب مستقيمة', d2: 'حواجب بشكل مستقيم', isMulti: true },
+            { cat: 'body_desc', w1: 'جبهة عالية', d1: 'جبهة مرتفعة', w2: 'رأس أصلع', d2: 'رأس بلا شعر', isMulti: true },
+            { cat: 'body_desc', w1: 'جبهة منخفضة', d1: 'جبهة منخفضة القامة', w2: 'رأس بشعر', d2: 'رأس يغطيه الشعر', isMulti: true },
+            { cat: 'body_desc', w1: 'عنق طويل', d1: 'رقبة طويلة كالزرافة', w2: 'ضفائر كثيرة', d2: 'شعر مضفر بكثرة', isMulti: true },
+            { cat: 'body_desc', w1: 'عنق قصير', d1: 'رقبة قصيرة', w2: 'ضفائر قليلة', d2: 'عدد قليل من الضفائر', isMulti: true },
+            { cat: 'body_desc', w1: 'كتف عريض', d1: 'كتف واسع', w2: 'قرط ذهبي', d2: 'حلية من الذهب في الأذن', isMulti: true },
+            { cat: 'body_desc', w1: 'كتف ضيق', d1: 'كتف ضيق الحجم', w2: 'قرط فضي', d2: 'حلية من الفضة', isMulti: true },
+            { cat: 'body_desc', w1: 'صدر عريض', d1: 'صدر واسع', w2: 'ثقب أنف صغير', d2: 'فتحة صغيرة في الأنف', isMulti: true },
+            { cat: 'body_desc', w1: 'صدر غائر', d1: 'صدر مقعر', w2: 'ثقب أنف كبير', d2: 'فتحة كبيرة في الأنف', isMulti: true },
+            { cat: 'body_desc', w1: 'بطن كبير', d1: 'بطن ضخم', w2: 'نظارة طبية', d2: 'نظارة لتصحيح النظر', isMulti: true },
+            { cat: 'body_desc', w1: 'بطن مسطح', d1: 'بطن بدون بروز', w2: 'نظارة شمسية', d2: 'نظارة للحماية من الشمس', isMulti: true },
+            { cat: 'body_desc', w1: 'ظهر منحني', d1: 'ظهر محدب', w2: 'ابتسامة جميلة', d2: 'ابتسامة جذابة', isMulti: true },
+            { cat: 'body_desc', w1: 'ظهر مستقيم', d1: 'ظهر معتدل', w2: 'ابتسامة عريضة', d2: 'ابتسامة واسعة', isMulti: true },
+            { cat: 'body_desc', w1: 'ذراع قوية', d1: 'ذراع عضلية', w2: 'نظرة حادة', d2: 'نظرة ثاقبة', isMulti: true },
+            { cat: 'body_desc', w1: 'ذراع ضعيفة', d1: 'ذراع نحيفة', w2: 'نظرة ناعمة', d2: 'نظرة لطيفة', isMulti: true },
+            { cat: 'body_desc', w1: 'كف صغير', d1: 'كف يد صغير', w2: 'جبين متعرق', d2: 'جبين عليه عرق', isMulti: true },
+            { cat: 'body_desc', w1: 'كف كبير', d1: 'كف يد كبير', w2: 'جبين نظيف', d2: 'جبين خالٍ من العرق', isMulti: true },
+            { cat: 'body_desc', w1: 'أصابع طويلة', d1: 'أصابع ممتدة', w2: 'أنف معقوف', d2: 'أنف منحنٍ كالنسر', isMulti: true },
+            { cat: 'body_desc', w1: 'أصابع قصيرة', d1: 'أصابع قصيرة', w2: 'أنف أفطس', d2: 'أنف مسطح', isMulti: true },
+            { cat: 'body_desc', w1: 'أظافر طويلة', d1: 'أظافر غير مقلمة', w2: 'شفاه ممتلئة', d2: 'شفاه مكتنزة', isMulti: true },
+            { cat: 'body_desc', w1: 'أظافر قصيرة', d1: 'أظافر مقلمة', w2: 'شفاه رفيعة', d2: 'شفاه نحيفة', isMulti: true },
+            { cat: 'body_desc', w1: 'ساق طويلة', d1: 'ساق طويلة', w2: 'أذن مدببة', d2: 'أذن بشكل مدبب', isMulti: true },
+            { cat: 'body_desc', w1: 'ساق قصيرة', d1: 'ساق قصيرة', w2: 'أذن مستديرة', d2: 'أذن دائرية', isMulti: true },
+            { cat: 'body_desc', w1: 'قدم كبيرة', d1: 'قدم حجم كبير', w2: 'ذقن مزدوج', d2: 'طبقتان من الدهون تحت الذقن', isMulti: true },
+            { cat: 'body_desc', w1: 'قدم صغيرة', d1: 'قدم حجم صغير', w2: 'ذقن واحد', d2: 'ذقن مفرد', isMulti: true },
+
+            // food_desc (50 entries)
+            { cat: 'food_desc', w1: 'بيتزا مثلثة', d1: 'بيتزا بشكل مثلث', w2: 'بابا غنوج', d2: 'متبل من الباذنجان', isMulti: true },
+            { cat: 'food_desc', w1: 'شوربة باردة', d1: 'شوربة تقدم باردة', w2: 'كبة نية', d2: 'لحم نيء مع برغل', isMulti: true },
+            { cat: 'food_desc', w1: 'آيس كريم حار', d1: 'آيس كريم ساخن', w2: 'كبة مقلية', d2: 'كبة مقلية بالزيت', isMulti: true },
+            { cat: 'food_desc', w1: 'خبز مطاطي', d1: 'خبز قوامه مطاطي', w2: 'حلوى الجبن', d2: 'حلوى بالجبن الحلو', isMulti: true },
+            { cat: 'food_desc', w1: 'جبن أزرق', d1: 'جبن معفن باللون الأزرق', w2: 'كنافة نابلسية', d2: 'كنافة بالجبن', isMulti: true },
+            { cat: 'food_desc', w1: 'تفاح مالح', d1: 'تفاح بنكهة مالحة', w2: 'بقلاوة فستق', d2: 'بقلاوة محشوة بالفستق', isMulti: true },
+            { cat: 'food_desc', w1: 'موز مقلي', d1: 'موز مغطى بالعجين ومقلي', w2: 'قطايف جبن', d2: 'قطايف محشوة بالجبن', isMulti: true },
+            { cat: 'food_desc', w1: 'عنب مجفف', d1: 'عنب تم تجفيفه', w2: 'معمول تمر', d2: 'معمول محشو بالتمر', isMulti: true },
+            { cat: 'food_desc', w1: 'بطاطس حلوة', d1: 'بطاطس ذات طعم حلو', w2: 'غريبة فستق', d2: 'غريبة بالفستق', isMulti: true },
+            { cat: 'food_desc', w1: 'لحم غريب', d1: 'لحم من حيوان غير معروف', w2: 'برازق سمسم', d2: 'برازق بالسمسم', isMulti: true },
+            { cat: 'food_desc', w1: 'سمك طائر', d1: 'سمك يمكنه الطيران', w2: 'زنود الست', d2: 'رقائق محشوة بالقشطة', isMulti: true },
+            { cat: 'food_desc', w1: 'دجاج ناطق', d1: 'دجاج يتحدث كالبشر', w2: 'لقيمات عسل', d2: 'لقيمات مغموسة بالعسل', isMulti: true },
+            { cat: 'food_desc', w1: 'بيض مربع', d1: 'بيض بشكل مربع', w2: 'عوامة شيرة', d2: 'عوامة مغموسة بالشيرة', isMulti: true },
+            { cat: 'food_desc', w1: 'عصير لامع', d1: 'عصير يصدر ضوءًا', w2: 'شعيرية لبن', d2: 'شعيرية مع لبن', isMulti: true },
+            { cat: 'food_desc', w1: 'كعكة مضيئة', d1: 'كعكة تتوهج في الظلام', w2: 'أرز حليب', d2: 'أرز مطبوخ مع حليب', isMulti: true },
+            { cat: 'food_desc', w1: 'شاي معلب', d1: 'شاي معبأ في علب', w2: 'مهلبية فستق', d2: 'مهلبية بالفستق', isMulti: true },
+            { cat: 'food_desc', w1: 'قهوة مثلجة', d1: 'قهوة مبردة', w2: 'أم علي', d2: 'حلوى خبز بالحليب', isMulti: true },
+            { cat: 'food_desc', w1: 'زبدة الفول', d1: 'زبدة مصنوعة من الفول السوداني', w2: 'كعكة شوكولاتة', d2: 'كعكة بنكهة الشوكولاتة', isMulti: true },
+            { cat: 'food_desc', w1: 'صلصة حارة', d1: 'صلصة ذات طعم حار', w2: 'آيس كريم فانيليا', d2: 'آيس كريم بنكهة الفانيليا', isMulti: true },
+            { cat: 'food_desc', w1: 'عسل أسود', d1: 'عسل داكن اللون', w2: 'كريب نوتيلا', d2: 'كريب محشو بنوتيلا', isMulti: true },
+            { cat: 'food_desc', w1: 'زيت زيتون', d1: 'زيت مستخرج من الزيتون', w2: 'وافل عسل', d2: 'وافل مع العسل', isMulti: true },
+            { cat: 'food_desc', w1: 'خيار مخلل', d1: 'خيار محفوظ في محلول ملحي', w2: 'بان كيك', d2: 'فطائر صغيرة مقلية', isMulti: true },
+            { cat: 'food_desc', w1: 'زيتون محشي', d1: 'زيتون محشو بالفلفل أو الثوم', w2: 'دونات سكر', d2: 'دونات مغطى بالسكر', isMulti: true },
+            { cat: 'food_desc', w1: 'فلافل سمسم', d1: 'فلافل مغطاة بالسمسم', w2: 'كرواسون شوكولاتة', d2: 'كرواسون محشو بالشوكولاتة', isMulti: true },
+            { cat: 'food_desc', w1: 'حمص طحينة', d1: 'حمص مع طحينة', w2: 'خبز محمص', d2: 'خبز تم تحميصه', isMulti: true },
+            { cat: 'food_desc', w1: 'كباب مشوي', d1: 'لحم مشوي على الأسياخ', w2: 'توست جبن', d2: 'توست مع جبن ذائب', isMulti: true },
+            { cat: 'food_desc', w1: 'شاورما لحم', d1: 'لحم مشوي ومقطع', w2: 'ساندويتش فلافل', d2: 'خبز مع فلافل', isMulti: true },
+            { cat: 'food_desc', w1: 'فطائر جبن', d1: 'فطائر محشوة بالجبن', w2: 'برجر لحم', d2: 'شطيرة لحم برجر', isMulti: true },
+            { cat: 'food_desc', w1: 'معكرونة بشاميل', d1: 'معكرونة مع صلصة البشاميل', w2: 'هوت دوج', d2: 'سجق في خبز', isMulti: true },
+            { cat: 'food_desc', w1: 'رز معمر', d1: 'أرز مطبوخ مع الحليب والسكر', w2: 'بيتزا خضار', d2: 'بيتزا بالخضروات', isMulti: true },
+            { cat: 'food_desc', w1: 'عدس أصفر', d1: 'عدس ذو لون أصفر', w2: 'باستا ألفريدو', d2: 'معكرونة بصلصة ألفريدو', isMulti: true },
+            { cat: 'food_desc', w1: 'فول مدمس', d1: 'فول مطبوخ ومهروس', w2: 'لازانيا لحم', d2: 'لازانيا بطبقات لحم', isMulti: true },
+            { cat: 'food_desc', w1: 'طعمية مقرمشة', d1: 'أقراص فلافل مقرمشة', w2: 'رافيولي جبن', d2: 'رافيولي محشو بالجبن', isMulti: true },
+            { cat: 'food_desc', w1: 'بطاطس مقلية', d1: 'بطاطس مقطعة ومقلية', w2: 'نودلز دجاج', d2: 'نودلز مع دجاج', isMulti: true },
+            { cat: 'food_desc', w1: 'كوسا محشي', d1: 'كوسا محشوة بالأرز واللحم', w2: 'شوربة خضار', d2: 'شوربة خضروات', isMulti: true },
+            { cat: 'food_desc', w1: 'ورق عنب', d1: 'ورق عنب محشي', w2: 'شوربة عدس', d2: 'شوربة عدس', isMulti: true },
+            { cat: 'food_desc', w1: 'ملفوف محشي', d1: 'ملفوف محشي', w2: 'شوربة طماطم', d2: 'شوربة طماطم', isMulti: true },
+            { cat: 'food_desc', w1: 'شيش طاووق', d1: 'أسياخ دجاج مشوي', w2: 'سلطة فواكه', d2: 'سلطة من فواكه طازجة', isMulti: true },
+            { cat: 'food_desc', w1: 'كفتة لحم', d1: 'كرات لحم مفروم', w2: 'عصير برتقال', d2: 'عصير برتقال طبيعي', isMulti: true },
+            { cat: 'food_desc', w1: 'صفيحة لحمة', d1: 'عجين محشو باللحم', w2: 'عصير ليمون', d2: 'عصير ليمون حامض', isMulti: true },
+            { cat: 'food_desc', w1: 'مناقيش زعتر', d1: 'عجين مغطى بالزعتر', w2: 'عصير مانجو', d2: 'عصير مانجو', isMulti: true },
+            { cat: 'food_desc', w1: 'لبنة زيت', d1: 'لبنة مع زيت الزيتون', w2: 'ميلك شيك', d2: 'مشروب حليب مخفوق', isMulti: true },
+            { cat: 'food_desc', w1: 'جبنة عكاوي', d1: 'جبن أبيض مالح', w2: 'موهيتو نعناع', d2: 'مشروب موهيتو بالنعناع', isMulti: true },
+            { cat: 'food_desc', w1: 'زبادي يوناني', d1: 'زبادي كثيف القوام', w2: 'كوكتيل فراولة', d2: 'كوكتيل فراولة', isMulti: true },
+            { cat: 'food_desc', w1: 'حليب جوز الهند', d1: 'حليب مستخلص من جوز الهند', w2: 'عصير جزر', d2: 'عصير جزر', isMulti: true },
+            { cat: 'food_desc', w1: 'عصير قصب', d1: 'عصير من قصب السكر', w2: 'عصير رمان', d2: 'عصير رمان', isMulti: true },
+            { cat: 'food_desc', w1: 'كوكتيل فواكه', d1: 'مزيج من عصائر الفواكه', w2: 'عصير أناناس', d2: 'عصير أناناس', isMulti: true },
+            { cat: 'food_desc', w1: 'سلطة خضراء', d1: 'سلطة من خضروات طازجة', w2: 'قهوة عربية', d2: 'قهوة سادة بالهيل', isMulti: true },
+            { cat: 'food_desc', w1: 'سلطة تبولة', d1: 'سلطة برغل وبقدونس', w2: 'شاي أخضر', d2: 'شاي أوراق خضراء', isMulti: true },
+            { cat: 'food_desc', w1: 'سلطة فتوش', d1: 'سلطة خبز محمص وخضار', w2: 'شاي نعناع', d2: 'شاي بالنعناع', isMulti: true },
+
+            // actions_desc (50 entries)
+            { cat: 'actions_desc', w1: 'القفز فوق الجبال', d1: 'القفز من قمة لأخرى', w2: 'الغوص في المحيط', d2: 'النزول إلى أعماق البحر', isMulti: true },
+            { cat: 'actions_desc', w1: 'الرقص تحت المطر', d1: 'حركات راقصة في الأمطار', w2: 'الطيران إلى المريخ', d2: 'السفر إلى كوكب المريخ', isMulti: true },
+            { cat: 'actions_desc', w1: 'السباحة في النار', d1: 'السباحة وسط ألسنة اللهب', w2: 'اكتشاف الكواكب', d2: 'العثور على عوالم جديدة', isMulti: true },
+            { cat: 'actions_desc', w1: 'الطيران بلا أجنحة', d1: 'التحليق بدون مساعدة', w2: 'اختراع الآلات', d2: 'صنع أجهزة مبتكرة', isMulti: true },
+            { cat: 'actions_desc', w1: 'الأكل بالشوكة', d1: 'تناول الطعام باستخدام شوكة', w2: 'تحليل البيانات', d2: 'دراسة المعلومات والأرقام', isMulti: true },
+            { cat: 'actions_desc', w1: 'الشرب من النهر', d1: 'احتساء الماء من مجرى مائي', w2: 'كتابة التقارير', d2: 'تدوين الملاحظات الرسمية', isMulti: true },
+            { cat: 'actions_desc', w1: 'النوم على السحاب', d1: 'الاستلقاء على غيمة', w2: 'تقديم العروض', d2: 'عرض الأفكار أمام الجمهور', isMulti: true },
+            { cat: 'actions_desc', w1: 'الجري حافي القدمين', d1: 'الركض بدون حذاء', w2: 'الاجتماع مع الزملاء', d2: 'لقاء زملاء العمل', isMulti: true },
+            { cat: 'actions_desc', w1: 'المشي على الحبل', d1: 'التوازن على حبل مشدود', w2: 'العمل في المكتب', d2: 'أداء المهام الوظيفية', isMulti: true },
+            { cat: 'actions_desc', w1: 'التسلق على الجدران', d1: 'صعود الجدران العمودية', w2: 'الدراسة في الجامعة', d2: 'التعلم في مؤسسة تعليمية', isMulti: true },
+            { cat: 'actions_desc', w1: 'الغوص في العمق', d1: 'النزول إلى أعماق الماء', w2: 'التدريس في المدرسة', d2: 'تعليم الطلاب في الفصل', isMulti: true },
+            { cat: 'actions_desc', w1: 'الزحف في الوحل', d1: 'التحرك على البطن في الطين', w2: 'التعلم عن بعد', d2: 'الدراسة عبر الإنترنت', isMulti: true },
+            { cat: 'actions_desc', w1: 'القفز بالمظلة', d1: 'الهبوط بالمظلة من الجو', w2: 'البحث عن المعلومات', d2: 'استقصاء المعرفة', isMulti: true },
+            { cat: 'actions_desc', w1: 'ركوب الأمواج', d1: 'التزحلق على سطح الموج', w2: 'تصفح الإنترنت', d2: 'التجول في الشبكة العنكبوتية', isMulti: true },
+            { cat: 'actions_desc', w1: 'التزلج على الجليد', d1: 'الانزلاق على سطح جليدي', w2: 'قراءة الجرائد', d2: 'مطالعة الصحف اليومية', isMulti: true },
+            { cat: 'actions_desc', w1: 'التزحلق على الرمال', d1: 'الانزلاق على كثبان رملية', w2: 'الاستماع للراديو', d2: 'الإصغاء إلى البث الإذاعي', isMulti: true },
+            { cat: 'actions_desc', w1: 'لعب الشطرنج', d1: 'ممارسة لعبة الملكات', w2: 'مشاهدة التلفاز', d2: 'النظر إلى البرامج التلفزيونية', isMulti: true },
+            { cat: 'actions_desc', w1: 'قراءة الكتب', d1: 'مطالعة الصفحات', w2: 'لعب الألعاب', d2: 'الانخراط في الألعاب الترفيهية', isMulti: true },
+            { cat: 'actions_desc', w1: 'كتابة الروايات', d1: 'تأليف قصص طويلة', w2: 'برمجة الحاسوب', d2: 'كتابة أكواد برمجية', isMulti: true },
+            { cat: 'actions_desc', w1: 'رسم اللوحات', d1: 'استخدام الألوان على القماش', w2: 'تصميم المواقع', d2: 'بناء واجهات إلكترونية', isMulti: true },
+            { cat: 'actions_desc', w1: 'غناء الأغاني', d1: 'إصدار صوت لحني', w2: 'تركيب الأجهزة', d2: 'تجميع المعدات التقنية', isMulti: true },
+            { cat: 'actions_desc', w1: 'عزف الموسيقى', d1: 'العزف على آلة موسيقية', w2: 'إصلاح السيارات', d2: 'صيانة المركبات', isMulti: true },
+            { cat: 'actions_desc', w1: 'تصوير الأفلام', d1: 'تسجيل مشاهد سينمائية', w2: 'هدم المباني', d2: 'تدمير الأبنية', isMulti: true },
+            { cat: 'actions_desc', w1: 'تمثيل المسرحيات', d1: 'أداء أدوار على خشبة المسرح', w2: 'بناء القلاع', d2: 'تشييد حصون ضخمة', isMulti: true },
+            { cat: 'actions_desc', w1: 'إخراج الأفلام', d1: 'قيادة فريق التصوير', w2: 'الكتابة على الرمال', d2: 'النقش على سطح الرمل', isMulti: true },
+            { cat: 'actions_desc', w1: 'تصميم الأزياء', d1: 'ابتكار ملابس جديدة', w2: 'الرسم على الجدران', d2: 'تزيين الحوائط بالرسوم', isMulti: true },
+            { cat: 'actions_desc', w1: 'خياطة الملابس', d1: 'تجميع الأقمشة بالإبرة', w2: 'العزف في الشارع', d2: 'تقديم موسيقى في الأماكن العامة', isMulti: true },
+            { cat: 'actions_desc', w1: 'طبخ الطعام', d1: 'إعداد الوجبات', w2: 'الغناء في المهرجان', d2: 'إحياء حفل غنائي', isMulti: true },
+            { cat: 'actions_desc', w1: 'خبز الخبز', d1: 'صنع الخبز في الفرن', w2: 'الرقص في الزفاف', d2: 'التحرك على أنغام الأعراس', isMulti: true },
+            { cat: 'actions_desc', w1: 'قلي البطاطس', d1: 'تحمير البطاطس في الزيت', w2: 'تنظيم الحفلات', d2: 'ترتيب الاحتفالات', isMulti: true },
+            { cat: 'actions_desc', w1: 'شوي اللحم', d1: 'طهي اللحم على الفحم', w2: 'حضور الحفلات', d2: 'المشاركة في المناسبات', isMulti: true },
+            { cat: 'actions_desc', w1: 'عصر البرتقال', d1: 'استخراج عصير البرتقال', w2: 'زيارة الأقارب', d2: 'الذهاب إلى الأهل', isMulti: true },
+            { cat: 'actions_desc', w1: 'تحضير القهوة', d1: 'صنع القهوة', w2: 'الاتصال بالأصدقاء', d2: 'التحدث هاتفياً مع الأصحاب', isMulti: true },
+            { cat: 'actions_desc', w1: 'تقديم الشاي', d1: 'سكب الشاي للضيوف', w2: 'إرسال الرسائل', d2: 'بعث رسائل نصية', isMulti: true },
+            { cat: 'actions_desc', w1: 'تنظيف المنزل', d1: 'إزالة الأوساخ من البيت', w2: 'استلام البريد', d2: 'تسلم الرسائل البريدية', isMulti: true },
+            { cat: 'actions_desc', w1: 'ترتيب الغرفة', d1: 'تنظيم الأثاث والأغراض', w2: 'دفع الفواتير', d2: 'سداد المستحقات المالية', isMulti: true },
+            { cat: 'actions_desc', w1: 'غسل الصحون', d1: 'تنظيف الأواني', w2: 'التفاوض على السعر', d2: 'المساومة لتخفيض الثمن', isMulti: true },
+            { cat: 'actions_desc', w1: 'كنس الأرض', d1: 'إزالة الغبار بالمكانس', w2: 'بيع الفواكه', d2: 'عرض الفواكه للشراء', isMulti: true },
+            { cat: 'actions_desc', w1: 'مسح النوافذ', d1: 'تنظيف الزجاج', w2: 'شراء الخضار', d2: 'اقتناء الخضروات', isMulti: true },
+            { cat: 'actions_desc', w1: 'تلميع الأحذية', d1: 'جعل الحذاء لامعاً', w2: 'انتظار الحافلة', d2: 'الوقوف في محطة الأتوبيس', isMulti: true },
+            { cat: 'actions_desc', w1: 'ترتيب السرير', d1: 'فرد الملاءات', w2: 'النظر إلى القمر', d2: 'التأمل في القمر', isMulti: true },
+            { cat: 'actions_desc', w1: 'ري النباتات', d1: 'سقاية الزروع', w2: 'مراقبة النجوم', d2: 'مشاهدة النجوم في السماء', isMulti: true },
+            { cat: 'actions_desc', w1: 'زراعة الزهور', d1: 'غرس الأزهار', w2: 'إطعام الطيور', d2: 'تقديم الطعام للعصافير', isMulti: true },
+            { cat: 'actions_desc', w1: 'حصاد القمح', d1: 'جمع سنابل القمح', w2: 'مداعبة الكلاب', d2: 'اللطف مع الكلاب', isMulti: true },
+            { cat: 'actions_desc', w1: 'قطاف الزيتون', d1: 'جني ثمار الزيتون', w2: 'اللعب مع القطط', d2: 'التسلية مع القطط', isMulti: true },
+            { cat: 'actions_desc', w1: 'صيد السمك', d1: 'اصطياد الأسماك', w2: 'السباحة مع الدلافين', d2: 'الغطس مع الدلافين', isMulti: true },
+            { cat: 'actions_desc', w1: 'رعي الأغنام', d1: 'قيادة الخراف', w2: 'الغطس في البحر', d2: 'النزول تحت الماء', isMulti: true },
+            { cat: 'actions_desc', w1: 'ركوب الخيل', d1: 'الامتطاء صهوة الجواد', w2: 'القفز من الجسر', d2: 'الوثوب من على الجسر', isMulti: true },
+            { cat: 'actions_desc', w1: 'قيادة السيارة', d1: 'توجيه المركبة', w2: 'اجتياز النهر', d2: 'عبور النهر', isMulti: true },
+            { cat: 'actions_desc', w1: 'ركوب الدراجة', d1: 'استخدام الدراجة الهوائية', w2: 'عبور الصحراء', d2: 'السفر عبر الرمال', isMulti: true },
+            { cat: 'actions_desc', w1: 'السفر بالطائرة', d1: 'التحليق جوًا', w2: 'نزول الأودية', d2: 'الهبوط إلى الأودية', isMulti: true },
+
+            // places_desc (50 entries)
+            { cat: 'places_desc', w1: 'مدينة في الجحيم', d1: 'بلدة تقع في العالم السفلي', w2: 'قاعدة على المريخ', d2: 'منشأة بشرية على كوكب المريخ', isMulti: true },
+            { cat: 'places_desc', w1: 'مقهى على القمر', d1: 'مكان لشرب القهوة على سطح القمر', w2: 'محطة فضائية', d2: 'منصة تدور في الفضاء', isMulti: true },
+            { cat: 'places_desc', w1: 'مطعم تحت البحر', d1: 'مكان للأكل تحت الماء', w2: 'مدينة عائمة', d2: 'بلدة تطفو على الماء', isMulti: true },
+            { cat: 'places_desc', w1: 'مدرسة في الغابة', d1: 'مؤسسة تعليمية وسط الأشجار', w2: 'مدينة تحت الأرض', d2: 'بلدة مدفونة في باطن الأرض', isMulti: true },
+            { cat: 'places_desc', w1: 'مستشفى في الصحراء', d1: 'منشأة طبية في الرمال', w2: 'كهف القراصنة', d2: 'مغارة يختبئ فيها القراصنة', isMulti: true },
+            { cat: 'places_desc', w1: 'سجن على الجزيرة', d1: 'معتقل في جزيرة نائية', w2: 'جزيرة الكنز', d2: 'أرض مخبأ فيها الكنوز', isMulti: true },
+            { cat: 'places_desc', w1: 'قصر من زجاج', d1: 'بناء شفاف بالكامل', w2: 'بحيرة مسحورة', d2: 'مياه ذات سحر أسطوري', isMulti: true },
+            { cat: 'places_desc', w1: 'كوخ من ثلج', d1: 'مسكن مبني من الجليد', w2: 'مستنقع مظلم', d2: 'أرض رطبة ومعتمة', isMulti: true },
+            { cat: 'places_desc', w1: 'برج عالٍ', d1: 'ناطحة سحاب شاهقة', w2: 'حقل أزهار', d2: 'أرض مغطاة بالورود', isMulti: true },
+            { cat: 'places_desc', w1: 'جسر معلق', d1: 'معبر مربوط بالكابلات', w2: 'مرج أخضر', d2: 'سهل مغطى بالعشب', isMulti: true },
+            { cat: 'places_desc', w1: 'نفق مظلم', d1: 'ممر تحت الأرض بلا نور', w2: 'غابة كثيفة', d2: 'منطقة مليئة بالأشجار', isMulti: true },
+            { cat: 'places_desc', w1: 'كهف عميق', d1: 'فتحة أرضية سحيقة', w2: 'هضبة عالية', d2: 'منطقة مرتفعة ومسطحة', isMulti: true },
+            { cat: 'places_desc', w1: 'شلال مرتفع', d1: 'مياه تهوي من علو', w2: 'سهل فيضي', d2: 'أرض منخفضة قرب النهر', isMulti: true },
+            { cat: 'places_desc', w1: 'بحيرة مالحة', d1: 'مياه ذات ملوحة عالية', w2: 'قمة جبل', d2: 'أعلى نقطة في الجبل', isMulti: true },
+            { cat: 'places_desc', w1: 'نهر جاف', d1: 'مجرى مائي بدون ماء', w2: 'منحدر خطير', d2: 'سفح شديد الانحدار', isMulti: true },
+            { cat: 'places_desc', w1: 'جبل ناري', d1: 'بركان يمكن أن يثور', w2: 'طريق ملتوي', d2: 'مسار متعرج', isMulti: true },
+            { cat: 'places_desc', w1: 'وادي القمر', d1: 'منخفض يشبه سطح القمر', w2: 'جسر حجري', d2: 'معبر مبني من الحجر', isMulti: true },
+            { cat: 'places_desc', w1: 'صحراء قاحلة', d1: 'منطقة جافة بلا حياة', w2: 'قناة مائية', d2: 'مجرى صناعي للمياه', isMulti: true },
+            { cat: 'places_desc', w1: 'غابة مطيرة', d1: 'أرض تغمرها الأمطار', w2: 'بئر قديم', d2: 'حفرة ماء تاريخية', isMulti: true },
+            { cat: 'places_desc', w1: 'جزيرة نائية', d1: 'أرض معزولة عن العالم', w2: 'عين ماء', d2: 'ينبوع طبيعي', isMulti: true },
+            { cat: 'places_desc', w1: 'قرية صغيرة', d1: 'تجمع سكني قليل السكان', w2: 'واحة نخيل', d2: 'بقعة خضراء في الصحراء', isMulti: true },
+            { cat: 'places_desc', w1: 'مدينة مزدحمة', d1: 'بلدة مكتظة بالسكان', w2: 'كثبان رملية', d2: 'تلال من الرمل', isMulti: true },
+            { cat: 'places_desc', w1: 'عاصمة كبيرة', d1: 'مدينة رئيسية لدولة', w2: 'صحراء ملحية', d2: 'أرض مغطاة بالملح', isMulti: true },
+            { cat: 'places_desc', w1: 'سوق شعبي', d1: 'مكان تقليدي للبيع والشراء', w2: 'وادي الورود', d2: 'منخفض مليء بالورود', isMulti: true },
+            { cat: 'places_desc', w1: 'مركز تجاري', d1: 'مجمع ضخم للمحلات', w2: 'بركان خامد', d2: 'جبل ناري ساكن', isMulti: true },
+            { cat: 'places_desc', w1: 'ملعب رياضي', d1: 'منشأة لممارسة الرياضة', w2: 'جبل ثلجي', d2: 'قمة مغطاة بالثلوج', isMulti: true },
+            { cat: 'places_desc', w1: 'متحف فني', d1: 'مكان لعرض الأعمال الفنية', w2: 'كهف بلوري', d2: 'مغارة بالبلورات', isMulti: true },
+            { cat: 'places_desc', w1: 'مكتبة عامة', d1: 'مبنى يضم كتبًا للجميع', w2: 'شلال متجمد', d2: 'مياه متجمدة أثناء السقوط', isMulti: true },
+            { cat: 'places_desc', w1: 'حديقة حيوان', d1: 'مكان لعرض الحيوانات', w2: 'نهر جليدي', d2: 'مجرى مائي متجمد', isMulti: true },
+            { cat: 'places_desc', w1: 'حديقة نباتية', d1: 'منطقة مزروعة بالنباتات', w2: 'بحيرة زرقاء', d2: 'مسطح مائي أزرق', isMulti: true },
+            { cat: 'places_desc', w1: 'منتزه وطني', d1: 'منطقة طبيعية محمية', w2: 'غابة خيزران', d2: 'أرض مليئة بالخيزران', isMulti: true },
+            { cat: 'places_desc', w1: 'شاطئ رملي', d1: 'ساحل مغطى بالرمل', w2: 'كرم عنب', d2: 'مزرعة لزراعة العنب', isMulti: true },
+            { cat: 'places_desc', w1: 'ميناء بحري', d1: 'مرسى للسفن', w2: 'بستان زيتون', d2: 'أرض مزروعة بالزيتون', isMulti: true },
+            { cat: 'places_desc', w1: 'مطار دولي', d1: 'مرفأ للطائرات', w2: 'حقل قمح', d2: 'أرض مزروعة بالقمح', isMulti: true },
+            { cat: 'places_desc', w1: 'محطة قطار', d1: 'مكان لوقوف القطارات', w2: 'مزرعة أبقار', d2: 'منشأة لتربية الأبقار', isMulti: true },
+            { cat: 'places_desc', w1: 'محطة حافلات', d1: 'موقف للأتوبيسات', w2: 'مزرعة خيول', d2: 'مكان لتربية الخيول', isMulti: true },
+            { cat: 'places_desc', w1: 'موقف سيارات', d1: 'مكان لركن المركبات', w2: 'مصنع مهمل', d2: 'منشأة صناعية مهجورة', isMulti: true },
+            { cat: 'places_desc', w1: 'شارع رئيسي', d1: 'طريق أساسي في المدينة', w2: 'مدينة أشباح', d2: 'بلدة خالية من السكان', isMulti: true },
+            { cat: 'places_desc', w1: 'زقاق ضيق', d1: 'ممر صغير بين المباني', w2: 'مقبرة مهجورة', d2: 'مدفن غير مستخدم', isMulti: true },
+            { cat: 'places_desc', w1: 'ساحة كبيرة', d1: 'مساحة واسعة في المدينة', w2: 'كنيس يهودي', d2: 'مكان عبادة لليهود', isMulti: true },
+            { cat: 'places_desc', w1: 'نصب تذكاري', d1: 'تمثال أو بناء تخليدي', w2: 'مسجد كبير', d2: 'مكان عبادة إسلامي ضخم', isMulti: true },
+            { cat: 'places_desc', w1: 'قلعة قديمة', d1: 'حصن تاريخي', w2: 'كنيسة جميلة', d2: 'مبنى مسيحي رائع', isMulti: true },
+            { cat: 'places_desc', w1: 'أطلال تاريخية', d1: 'بقايا حضارات قديمة', w2: 'معبد أثري', d2: 'مكان عبادة قديم', isMulti: true },
+            { cat: 'places_desc', w1: 'مدينة في السحاب', d1: 'بلدة عائمة بين الغيوم', w2: 'عالم الأقزام', d2: 'مملكة الأقزام الأسطورية', isMulti: true },
+            { cat: 'places_desc', w1: 'فندق في الفضاء', d1: 'مكان إقامة خارج الأرض', w2: 'مملكة الجن', d2: 'عالم مخلوقات الجن', isMulti: true },
+            { cat: 'places_desc', w1: 'مطعم في الزمن', d1: 'مكان يتنقل عبر العصور', w2: 'عش العنقاء', d2: 'مسكن الطائر الأسطوري', isMulti: true },
+            { cat: 'places_desc', w1: 'متجر للأحلام', d1: 'محل يبيع الأحلام', w2: 'وكر التنين', d2: 'مكان يعيش فيه التنين', isMulti: true },
+            { cat: 'places_desc', w1: 'مكتبة النسيان', d1: 'مكان تضيع فيه الذكريات', w2: 'كوخ الساحرة', d2: 'مسكن الساحرة', isMulti: true },
+            { cat: 'places_desc', w1: 'مدرسة السحر', d1: 'أكاديمية لتعليم الشعوذة', w2: 'قصر الملوك', d2: 'مقر إقامة الملوك', isMulti: true },
+            { cat: 'places_desc', w1: 'أكاديمية الأبطال', d1: 'معهد لتدريب الأبطال', w2: 'سجن الأشرار', d2: 'معتقل للأشرار', isMulti: true },
+
+            // objects_desc (50 entries)
+            { cat: 'objects_desc', w1: 'قلم يطير', d1: 'أداة كتابة تحلق في الهواء', w2: 'طابعة ليزر', d2: 'جهاز طباعة بالليزر', isMulti: true },
+            { cat: 'objects_desc', w1: 'كرسي من جبن', d1: 'مقعد مصنوع من الجبن', w2: 'ماسح ضوئي', d2: 'جهاز لنسخ المستندات', isMulti: true },
+            { cat: 'objects_desc', w1: 'طاولة زجاجية', d1: 'سطح شفاف من الزجاج', w2: 'كاميرا رقمية', d2: 'جهاز تصوير إلكتروني', isMulti: true },
+            { cat: 'objects_desc', w1: 'سرير من سحاب', d1: 'فراش من الغيوم', w2: 'سماعات رأس', d2: 'أداة صوت توضع على الأذن', isMulti: true },
+            { cat: 'objects_desc', w1: 'مصباح سحري', d1: 'لمبة تحقق الأمنيات', w2: 'فأرة حاسوب', d2: 'أداة تحكم للحاسوب', isMulti: true },
+            { cat: 'objects_desc', w1: 'سجادة طائرة', d1: 'بساط يطير في الهواء', w2: 'لوحة مفاتيح', d2: 'أزرار للكتابة', isMulti: true },
+            { cat: 'objects_desc', w1: 'مرآة مسحورة', d1: 'زجاج عاكس بسحر', w2: 'شاشة حاسوب', d2: 'عرض مرئي للحاسوب', isMulti: true },
+            { cat: 'objects_desc', w1: 'ساعة زمنية', d1: 'أداة تسافر بالزمن', w2: 'جهاز لوحي', d2: 'حاسوب محمول صغير', isMulti: true },
+            { cat: 'objects_desc', w1: 'هاتف قديم', d1: 'جهاز اتصال تقليدي', w2: 'هاتف ذكي', d2: 'جوال حديث', isMulti: true },
+            { cat: 'objects_desc', w1: 'حاسوب محمول', d1: 'كمبيوتر متنقل', w2: 'طابع بريد', d2: 'ملصق بريدي صغير', isMulti: true },
+            { cat: 'objects_desc', w1: 'كتاب غامض', d1: 'مجلد مليء بالأسرار', w2: 'أظرف بريد', d2: 'مغلفات للمراسلات', isMulti: true },
+            { cat: 'objects_desc', w1: 'خريطة كنز', d1: 'رسم يحدد مكان الكنز', w2: 'مشابك ورق', d2: 'أدوات لتثبيت الأوراق', isMulti: true },
+            { cat: 'objects_desc', w1: 'بوصلة خيالية', d1: 'أداة توجيه سحرية', w2: 'دباسة مكتب', d2: 'أداة لتدبيس الأوراق', isMulti: true },
+            { cat: 'objects_desc', w1: 'نظارة رؤية', d1: 'عدسات ترى الخفاء', w2: 'مبراة أقلام', d2: 'أداة لشحذ الأقلام', isMulti: true },
+            { cat: 'objects_desc', w1: 'سماعة أذن', d1: 'جهاز استماع صغير', w2: 'ممحاة بيضاء', d2: 'أداة لمحو الكتابة', isMulti: true },
+            { cat: 'objects_desc', w1: 'كرة بلورية', d1: 'كرة زجاجية للتكهن', w2: 'دفتر ملاحظات', d2: 'كراسة للتدوين', isMulti: true },
+            { cat: 'objects_desc', w1: 'عصا سحرية', d1: 'قضيب لإلقاء التعاويذ', w2: 'قلم رصاص', d2: 'أداة كتابة بالرصاص', isMulti: true },
+            { cat: 'objects_desc', w1: 'قبعة ساحر', d1: 'غطاء رأس سحري', w2: 'مسطرة خشب', d2: 'أداة قياس من الخشب', isMulti: true },
+            { cat: 'objects_desc', w1: 'رداء خفي', d1: 'عباءة تجعل مرتديها غير مرئي', w2: 'مقص ورق', d2: 'أداة قطع للورق', isMulti: true },
+            { cat: 'objects_desc', w1: 'حذاء رياضي', d1: 'حذاء لممارسة الرياضة', w2: 'مرآة صغيرة', d2: 'زجاج عاكس بحجم صغير', isMulti: true },
+            { cat: 'objects_desc', w1: 'قفاز مطاطي', d1: 'غطاء لليد من المطاط', w2: 'مجفف شعر', d2: 'جهاز لتجفيف الشعر', isMulti: true },
+            { cat: 'objects_desc', w1: 'سكين حاد', d1: 'أداة قطع حادة', w2: 'مشط شعر', d2: 'أداة لتسريح الشعر', isMulti: true },
+            { cat: 'objects_desc', w1: 'شوكة ثلاثية', d1: 'أداة أكل بثلاثة أسنان', w2: 'منشفة حمام', d2: 'قماش لتجفيف الجسم', isMulti: true },
+            { cat: 'objects_desc', w1: 'ملعقة خشبية', d1: 'أداة طعام من الخشب', w2: 'شامبو شعر', d2: 'سائل لغسل الشعر', isMulti: true },
+            { cat: 'objects_desc', w1: 'كوب شاي', d1: 'إناء لشرب الشاي', w2: 'صابون سائل', d2: 'منظف سائل للجسم', isMulti: true },
+            { cat: 'objects_desc', w1: 'إبريق قهوة', d1: 'وعاء لتحضير القهوة', w2: 'معجون أسنان', d2: 'عجينة لتنظيف الأسنان', isMulti: true },
+            { cat: 'objects_desc', w1: 'صحن طائر', d1: 'طبق يحلق في الجو', w2: 'فرشاة أسنان', d2: 'أداة لتنظيف الأسنان', isMulti: true },
+            { cat: 'objects_desc', w1: 'زجاجة ماء', d1: 'وعاء لحفظ الماء', w2: 'دلو بلاستيك', d2: 'وعاء بلاستيكي للحمل', isMulti: true },
+            { cat: 'objects_desc', w1: 'علبة عصير', d1: 'عبوة عصير', w2: 'ممسحة أرضية', d2: 'أداة لتنظيف الأرضيات', isMulti: true },
+            { cat: 'objects_desc', w1: 'صندوق خشبي', d1: 'حاوية من الخشب', w2: 'مكنسة كهربائية', d2: 'جهاز لشفط الغبار', isMulti: true },
+            { cat: 'objects_desc', w1: 'حقيبة سفر', d1: 'شنطة للسفر', w2: 'مكواة ملابس', d2: 'أداة لكي الملابس', isMulti: true },
+            { cat: 'objects_desc', w1: 'مظلة ملونة', d1: 'شمسية بألوان زاهية', w2: 'غلاية ماء', d2: 'وعاء لغلي الماء', isMulti: true },
+            { cat: 'objects_desc', w1: 'ساعة يد', d1: 'ساعة تلبس في المعصم', w2: 'مطحنة قهوة', d2: 'أداة لطحن البن', isMulti: true },
+            { cat: 'objects_desc', w1: 'خاتم ذهب', d1: 'حلية دائرية من الذهب', w2: 'عصارة فواكه', d2: 'جهاز لاستخراج العصير', isMulti: true },
+            { cat: 'objects_desc', w1: 'عقد لؤلؤ', d1: 'قلادة من اللؤلؤ', w2: 'خلاط كهربائي', d2: 'جهاز لخلط الأطعمة', isMulti: true },
+            { cat: 'objects_desc', w1: 'أسورة فضة', d1: 'سوار من الفضة', w2: 'محمصة خبز', d2: 'جهاز لتحميص الخبز', isMulti: true },
+            { cat: 'objects_desc', w1: 'تاج ملكي', d1: 'إكليل الملوك', w2: 'ميكروويف صغير', d2: 'فرن كهربائي صغير', isMulti: true },
+            { cat: 'objects_desc', w1: 'صولجان حديد', d1: 'عصا حكم من الحديد', w2: 'فرن كهربائي', d2: 'جهاز طهو بالكهرباء', isMulti: true },
+            { cat: 'objects_desc', w1: 'درع واقي', d1: 'سترة لحماية الجسم', w2: 'غسالة صحون', d2: 'آلة لغسل الأواني', isMulti: true },
+            { cat: 'objects_desc', w1: 'سيف طويل', d1: 'سلاح أبيض طويل', w2: 'ثلاجة منزلية', d2: 'جهاز تبريد للأطعمة', isMulti: true },
+            { cat: 'objects_desc', w1: 'رمح حاد', d1: 'أداة قتال مدببة', w2: 'خلاط إسمنت', d2: 'آلة لخلط الإسمنت', isMulti: true },
+            { cat: 'objects_desc', w1: 'قوس ونشاب', d1: 'سلاح قذف السهام', w2: 'رافعة بناء', d2: 'آلة لرفع المواد', isMulti: true },
+            { cat: 'objects_desc', w1: 'بندقية صيد', d1: 'سلاح ناري للصيد', w2: 'حفارة ضخمة', d2: 'آلة للحفر الكبير', isMulti: true },
+            { cat: 'objects_desc', w1: 'مسدس صوت', d1: 'سلاح يصدر صوتًا', w2: 'جرار زراعي', d2: 'مركبة للزراعة', isMulti: true },
+            { cat: 'objects_desc', w1: 'قنبلة دخان', d1: 'عبوة تطلق دخانًا', w2: 'مروحية صغيرة', d2: 'طائرة عمودية صغيرة', isMulti: true },
+            { cat: 'objects_desc', w1: 'صاروخ فضائي', d1: 'مركبة للسفر للفضاء', w2: 'منطاد هواء', d2: 'بالون يطير بالهواء', isMulti: true },
+            { cat: 'objects_desc', w1: 'مركبة فضائية', d1: 'سفينة للسفر بين الكواكب', w2: 'طائرة ورقية', d2: 'لعبة تطير في الهواء', isMulti: true },
+            { cat: 'objects_desc', w1: 'قطار لعبة', d1: 'مجسم قطار صغير', w2: 'غواصة صفراء', d2: 'مركبة تحت الماء صفراء', isMulti: true },
+            { cat: 'objects_desc', w1: 'سيارة سباق', d1: 'مركبة سريعة للسباقات', w2: 'سفينة شراعية', d2: 'مركب يعمل بالشراع', isMulti: true },
+            { cat: 'objects_desc', w1: 'دراجة نارية', d1: 'مركبة ذات عجلتين بمحرك', w2: 'دراجة هوائية', d2: 'مركبة بدواسات', isMulti: true },
+
+            // sports_desc (50 entries)
+            { cat: 'sports_desc', w1: 'كرة قدم ناطقة', d1: 'كرة تتحدث أثناء اللعب', w2: 'رياضة مشي', d2: 'نشاط المشي المنتظم', isMulti: true },
+            { cat: 'sports_desc', w1: 'سباحة في العسل', d1: 'السباحة في سائل لزج', w2: 'رياضة جري', d2: 'نشاط الركض', isMulti: true },
+            { cat: 'sports_desc', w1: 'قفز عالي', d1: 'القفز لمسافات عمودية', w2: 'رياضة قفز', d2: 'تمارين القفز', isMulti: true },
+            { cat: 'sports_desc', w1: 'رمي الرمح', d1: 'قذف الرمح لأبعد مسافة', w2: 'رياضة رمي', d2: 'أنشطة الرمي المختلفة', isMulti: true },
+            { cat: 'sports_desc', w1: 'دفع الجلة', d1: 'دفع كرة حديدية ثقيلة', w2: 'رياضة رفع', d2: 'تمارين رفع الأثقال', isMulti: true },
+            { cat: 'sports_desc', w1: 'سباق دراجات', d1: 'تسابق بالدراجات', w2: 'رياضة قتالية', d2: 'فنون الدفاع عن النفس', isMulti: true },
+            { cat: 'sports_desc', w1: 'ماراثون طويل', d1: 'سباق جري لمسافات بعيدة', w2: 'رياضة دفاعية', d2: 'تمارين الحماية', isMulti: true },
+            { cat: 'sports_desc', w1: 'تسلق جدران', d1: 'صعود الحوائط العمودية', w2: 'رياضة مائية', d2: 'أنشطة في الماء', isMulti: true },
+            { cat: 'sports_desc', w1: 'رفع أثقال', d1: 'رفع الأوزان الثقيلة', w2: 'رياضة جوية', d2: 'أنشطة في الهواء', isMulti: true },
+            { cat: 'sports_desc', w1: 'مصارعة حرة', d1: 'صراع بدون قيود', w2: 'رياضة جبلية', d2: 'أنشطة في الجبال', isMulti: true },
+            { cat: 'sports_desc', w1: 'ملاكمة محترفة', d1: 'لكم بالأيدي في حلبة', w2: 'رياضة مغامرة', d2: 'أنشطة مثيرة', isMulti: true },
+            { cat: 'sports_desc', w1: 'كاراتيه قتالية', d1: 'فن قتالي ياباني', w2: 'رياضة تحدي', d2: 'أنشطة تتطلب شجاعة', isMulti: true },
+            { cat: 'sports_desc', w1: 'جودو ياباني', d1: 'رياضة يابانية للرمي', w2: 'رياضة جماعية', d2: 'ألعاب بالفريق', isMulti: true },
+            { cat: 'sports_desc', w1: 'تايكواندو أولمبي', d1: 'فن قتالي كوري بالركل', w2: 'رياضة فردية', d2: 'ألعاب فردية', isMulti: true },
+            { cat: 'sports_desc', w1: 'كونغ فو صيني', d1: 'فن قتالي صيني', w2: 'رياضة أولمبية', d2: 'ألعاب في الأولمبياد', isMulti: true },
+            { cat: 'sports_desc', w1: 'كرة سلة', d1: 'لعبة رمي الكرة في السلة', w2: 'رياضة بارالمبية', d2: 'ألعاب لذوي الاحتياجات', isMulti: true },
+            { cat: 'sports_desc', w1: 'كرة طائرة', d1: 'ضرب الكرة فوق الشبكة', w2: 'رياضة إلكترونية', d2: 'ألعاب الفيديو التنافسية', isMulti: true },
+            { cat: 'sports_desc', w1: 'كرة يد', d1: 'تمرير الكرة باليد', w2: 'شطرنج سريع', d2: 'لعبة استراتيجية بوقت محدود', isMulti: true },
+            { cat: 'sports_desc', w1: 'كرة ماء', d1: 'كرة في حوض السباحة', w2: 'لعبة الداما', d2: 'لعبة لوحية بالقطع', isMulti: true },
+            { cat: 'sports_desc', w1: 'هوكي جليد', d1: 'لعبة على الجليد بالعصا', w2: 'لعبة الطاولة', d2: 'لعبة النرد والقطع', isMulti: true },
+            { cat: 'sports_desc', w1: 'تنس أرضي', d1: 'ضرب الكرة بالمضرب', w2: 'لعبة الورق', d2: 'ألعاب بالكوتشينة', isMulti: true },
+            { cat: 'sports_desc', w1: 'تنس طاولة', d1: 'كرة الطاولة بمضرب صغير', w2: 'لعبة الدومينو', d2: 'قطع مستطيلة متتالية', isMulti: true },
+            { cat: 'sports_desc', w1: 'ريشة طائرة', d1: 'ضرب الريشة بالمضرب', w2: 'لعبة السلم والثعبان', d2: 'لعبة لوحية للأطفال', isMulti: true },
+            { cat: 'sports_desc', w1: 'اسكواش محترف', d1: 'كرة في غرفة مغلقة', w2: 'لعبة المونوبولي', d2: 'لعبة شراء العقارات', isMulti: true },
+            { cat: 'sports_desc', w1: 'غولف ملاعب', d1: 'ضرب الكرة في الحفر', w2: 'لعبة المخاطر', d2: 'لعبة استراتيجية حربية', isMulti: true },
+            { cat: 'sports_desc', w1: 'بيسبول أمريكي', d1: 'لعبة بالمضرب والكرة', w2: 'سباق خيل', d2: 'تسابق الأحصنة', isMulti: true },
+            { cat: 'sports_desc', w1: 'كرة أمريكية', d1: 'كرة بيضاوية باليد', w2: 'سباق كلاب', d2: 'تسابق الكلاب السلوقية', isMulti: true },
+            { cat: 'sports_desc', w1: 'رجبي دولي', d1: 'لعبة عنيفة بالكرة', w2: 'سباق سيارات', d2: 'تسابق السيارات', isMulti: true },
+            { cat: 'sports_desc', w1: 'كريكيت إنجليزي', d1: 'لعبة بالمضرب والكرة', w2: 'سباق دراجات نارية', d2: 'تسابق الموتوسيكلات', isMulti: true },
+            { cat: 'sports_desc', w1: 'بولينغ عائلي', d1: 'دحرجة الكرة للقمع', w2: 'سباق قوارب', d2: 'تسابق الزوارق', isMulti: true },
+            { cat: 'sports_desc', w1: 'بلياردو فرنسي', d1: 'كرة على طاولة بالعصا', w2: 'تجديف نهري', d2: 'التجديف بالقوارب في النهر', isMulti: true },
+            { cat: 'sports_desc', w1: 'سنوكر عالمي', d1: 'بلياردو بعدد كرات ملونة', w2: 'كانوي بحري', d2: 'قوارب الكانوي في البحر', isMulti: true },
+            { cat: 'sports_desc', w1: 'رمي السهام', d1: 'قذف السهام على هدف', w2: 'كاياك انزلاقي', d2: 'قوارب الكاياك السريعة', isMulti: true },
+            { cat: 'sports_desc', w1: 'رماية مسدس', d1: 'إطلاق النار من مسدس', w2: 'ركمجة أمواج', d2: 'ركوب الأمواج', isMulti: true },
+            { cat: 'sports_desc', w1: 'نبالة هدف', d1: 'رمي السهام بالقوس', w2: 'تزلج على الماء', d2: 'الانزلاق على سطح الماء', isMulti: true },
+            { cat: 'sports_desc', w1: 'فروسية قفز', d1: 'قفز الخيل فوق الحواجز', w2: 'تزلج على الثلج', d2: 'الهبوط على الثلج', isMulti: true },
+            { cat: 'sports_desc', w1: 'قفز بالزانة', d1: 'القفز باستخدام عصا طويلة', w2: 'تزلج على الجليد', d2: 'الانزلاق على الجليد', isMulti: true },
+            { cat: 'sports_desc', w1: 'قفز ثلاثي', d1: 'قفز بثلاث خطوات', w2: 'تزلج لوحي', d2: 'التزلج على الألواح', isMulti: true },
+            { cat: 'sports_desc', w1: 'قفز طويل', d1: 'القفز لأقصى مسافة', w2: 'جمباز فني', d2: 'حركات بهلوانية على الأجهزة', isMulti: true },
+            { cat: 'sports_desc', w1: 'عدو سريع', d1: 'الجري بسرعة قصوى', w2: 'جمباز إيقاعي', d2: 'حركات بالشرائط والكرات', isMulti: true },
+            { cat: 'sports_desc', w1: 'سباق حواجز', d1: 'جري مع قفز الحواجز', w2: 'بهلوانيات', d2: 'ألعاب سيرك', isMulti: true },
+            { cat: 'sports_desc', w1: 'سباق مشي', d1: 'مشي سريع', w2: 'ألعاب قوى', d2: 'مجموعة ألعاب رياضية', isMulti: true },
+            { cat: 'sports_desc', w1: 'سباق تتابع', d1: 'جري بالتناوب بين فريق', w2: 'سباحة حرة', d2: 'سباحة بدون قيود', isMulti: true },
+            { cat: 'sports_desc', w1: 'سباق اختراق الضاحية', d1: 'جري في الطبيعة', w2: 'سباحة ظهر', d2: 'سباحة على الظهر', isMulti: true },
+            { cat: 'sports_desc', w1: 'دراجات جبلية', d1: 'ركوب الدراجات في الجبال', w2: 'سباحة صدر', d2: 'سباحة بضربات الصدر', isMulti: true },
+            { cat: 'sports_desc', w1: 'دراجات هوائية', d1: 'ركوب الدراجات العادية', w2: 'سباحة فراشة', d2: 'سباحة بحركة الفراشة', isMulti: true },
+            { cat: 'sports_desc', w1: 'سباحة متنوعة', d1: 'سباحة بأساليب مختلفة', w2: 'غطس منصة', d2: 'قفز في الماء من منصة', isMulti: true },
+            { cat: 'sports_desc', w1: 'غطس سنوركل', d1: 'غطس بأنبوب تنفس', w2: 'كرة شاطئ', d2: 'كرة طائرة على الشاطئ', isMulti: true },
+            { cat: 'sports_desc', w1: 'كرة قدم شاطئية', d1: 'كرة قدم على الرمال', w2: 'تنس شاطئ', d2: 'تنس على الرمال', isMulti: true }
+
+
+        ];
+
+        // --- State ---
+        let gameState = {
+            numPlayers: 4,
+            numImposters: 1,
+            discussionTime: 60,
+            mode: 'classic',
+            wordType: 'single', // 'single' or 'multi'
+            category: 'all',
+            includeSpy: false,
+            includeBlind: false,
+            players: [], // { id, role, word, subtext, isRevealed }
+            currentPlayerIdx: 0,
+            originalWord: '',
+            fakeWord: '',
+            revealedCount: 0,
+            revealTimer: null,
+            discussionTimerInterval: null,
+            discussionTimeRemaining: 0,
+            votedOutId: null,
+            spyChoice: null,
+            winnerTitle: '',
+            winnerSubtitle: ''
+        };
+
+        const categoryNames = {
+            'all': 'الكل',
+            'food': 'طعام',
+            'animals': 'حيوانات',
+            'objects': 'أدوات',
+            'sports': 'رياضة',
+            'funny': 'مضحك / تمنيك',
+            'body': 'جسم',
+            'places': 'مدن / دول',
+            'jobs': 'مهن',
+            'body_desc': 'وصف الجسم',
+            'food_desc': 'حالة الطعام',
+            'actions_desc': 'أفعال شائعة',
+            'places_desc': 'وصف الأماكن',
+            'objects_desc': 'حالة الأشياء'
+        };
+
+        // --- Audio Context for Sfx ---
+        const playSfx = (type) => {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return; // Silent fallback if not supported
+
+                const ctx = new AudioContextClass();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'reveal') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.1);
+                } else if (type === 'tick') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.02, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.05);
+                } else if (type === 'timeout') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.8);
+                } else if (type === 'home') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, ctx.currentTime);
+                    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (type === 'win') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, ctx.currentTime);
+                    osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                }
+            } catch (error) {
+                console.warn("Audio play failed, likely due to mobile browser autoplay policies:", error);
+            }
+        };
+
+        const vibrate = (ms = 50) => {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        };
+
+        // --- UI Helpers ---
+        const showScreen = (id) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        };
+
+        // --- Game Logic ---
+        const initGame = () => {
+            let pool = wordDatabase;
+            // Filter by word type (single vs multi)
+            if (gameState.wordType === 'multi') {
+                pool = pool.filter(w => w.isMulti);
+            } else {
+                pool = pool.filter(w => !w.isMulti);
+            }
+
+            if (gameState.category !== 'all') {
+                pool = pool.filter(w => w.cat === gameState.category);
+            }
+            const pair = pool[Math.floor(Math.random() * pool.length)];
+            gameState.originalWord = pair.w1;
+            gameState.fakeWord = pair.w2;
+
+            // Generate Roles Array
+            let roles = [];
+            gameState.includeSpy = document.getElementById('spy-toggle').checked;
+            gameState.includeBlind = document.getElementById('blind-toggle').checked;
+
+            if (gameState.includeSpy) roles.push('spy');
+            if (gameState.includeBlind) roles.push('blind');
+            for (let i = 0; i < gameState.numImposters; i++) roles.push('imposter');
+
+            while (roles.length < gameState.numPlayers) {
+                roles.push('normal');
+            }
+            if (roles.length > gameState.numPlayers) {
+                roles = roles.slice(0, gameState.numPlayers);
+            }
+            roles.sort(() => Math.random() - 0.5);
+
+            gameState.players = roles.map((role, i) => {
+                let word = gameState.originalWord;
+                let subtext = '';
+
+                if (role === 'imposter') {
+                    word = (gameState.mode === 'classic') ? 'المحتال' : gameState.fakeWord;
+                } else if (role === 'spy') {
+                    word = 'أنت الجاسوس';
+                } else if (role === 'blind') {
+                    word = 'أنت الأعمى';
+                    subtext = 'لا ترى أية كلمة، لكنك لست المحتال.';
+                }
+
+                return {
+                    id: i + 1,
+                    role: role,
+                    word: word,
+                    subtext: subtext,
+                    isRevealed: false
+                };
+            });
+
+            // Inform spy and other imposters of the imposters' identities
+            const imposterPlayers = gameState.players.filter(p => p.role === 'imposter');
+            const imposterIds = imposterPlayers.map(p => p.id);
+
+            gameState.players.forEach(p => {
+                if (p.role === 'spy') {
+                    p.subtext = `المحتال هو اللاعب: ${imposterIds.join(' و ')}. لا تكشف نفسك حتى يتم كشفه!`;
+                } else if (p.role === 'imposter' && imposterIds.length > 1) {
+                    const otherImposters = imposterIds.filter(id => id !== p.id);
+                    p.subtext = `المحتال الآخر هو اللاعب: ${otherImposters.join(' و ')}`;
+                }
+            });
+
+            gameState.currentPlayerIdx = 0;
+            gameState.revealedCount = 0;
+            gameState.votedOutId = null;
+            gameState.spyChoice = null;
+
+            // Show home button
+            document.getElementById('home-btn').classList.remove('hidden');
+
+            buildPlayerGrid();
+            showScreen('screen-player-grid');
+        };
+
+        const buildPlayerGrid = () => {
+            const grid = document.getElementById('player-grid');
+            grid.innerHTML = '';
+
+            gameState.players.forEach((p, idx) => {
+                const slot = document.createElement('div');
+                slot.className = `player-slot ${p.isRevealed ? 'done' : ''}`;
+                slot.innerHTML = `
+                    <div class="player-avatar">P</div>
+                    <div class="player-name-label">اللاعب ${p.id}</div>
+                `;
+
+                if (!p.isRevealed) {
+                    slot.onclick = () => {
+                        gameState.currentPlayerIdx = idx;
+                        showIndividualReveal(p);
+                        playSfx('click');
+                    };
+                }
+                grid.appendChild(slot);
+            });
+
+            // Show completion button if everyone revealed
+            const allBtn = document.getElementById('all-revealed-btn');
+            if (gameState.revealedCount === gameState.players.length) {
+                allBtn.style.display = 'flex';
+            } else {
+                allBtn.style.display = 'none';
+            }
+        };
+
+        const showIndividualReveal = (player) => {
+            // Reset card state
+            const card = document.getElementById('reveal-card');
+            card.classList.remove('flipped');
+            document.getElementById('done-reveal-btn').classList.add('hidden');
+
+            // Set data
+            document.getElementById('reveal-player-title').innerText = `كلمة اللاعب ${player.id}`;
+            document.getElementById('role-word').innerText = player.word;
+            document.getElementById('role-category').innerText = `التصنيف: ${categoryNames[gameState.category] || 'عام'}`;
+
+            const subtext = document.getElementById('role-subtext');
+            if (player.subtext) {
+                subtext.innerText = player.subtext;
+                subtext.style.display = 'block';
+            } else {
+                subtext.style.display = 'none';
+            }
+
+            // Word description
+            const wordData = wordDatabase.find(w => w.w1 === player.word || w.w2 === player.word);
+            const descEl = document.getElementById('role-word-desc');
+            if (wordData && (player.word === wordData.w1 || player.word === wordData.w2)) {
+                descEl.innerText = (player.word === wordData.w1) ? wordData.d1 : wordData.d2;
+                descEl.style.display = 'block';
+            } else {
+                descEl.style.display = 'none';
+            }
+
+            showScreen('screen-reveal');
+        };
+
+        const nextPlayer = () => {
+            const player = gameState.players[gameState.currentPlayerIdx];
+            if (!player.isRevealed) {
+                player.isRevealed = true;
+                gameState.revealedCount++;
+            }
+
+            buildPlayerGrid();
+            showScreen('screen-player-grid');
+        };
+
+        const startStarterSelection = () => {
+            showScreen('screen-starter-pick');
+            const display = document.getElementById('starter-number-display');
+            const label = document.getElementById('starter-name-label');
+            const btn = document.getElementById('start-discussion-btn');
+
+            display.innerText = "?";
+            display.classList.remove('winner-glow');
+            display.classList.add('cycling');
+            label.style.opacity = "0";
+            btn.style.display = "none";
+
+            let iterations = 0;
+            const maxIterations = 20;
+            const interval = setInterval(() => {
+                const randomId = Math.floor(Math.random() * gameState.players.length) + 1;
+                display.innerText = randomId;
+                playSfx('tick');
+
+                iterations++;
+                if (iterations >= maxIterations) {
+                    clearInterval(interval);
+                    finalizeSelection();
+                }
+            }, 100);
+
+            const finalizeSelection = () => {
+                const winnerId = Math.floor(Math.random() * gameState.players.length) + 1;
+                display.innerText = winnerId;
+                display.classList.remove('cycling');
+                display.classList.add('winner-glow');
+                label.style.opacity = "1";
+                label.innerText = `اللاعب ${winnerId} سيبدأ!`;
+                btn.style.display = "flex";
+                playSfx('reveal');
+                vibrate([100, 50, 100]);
+            };
+        };
+
+        const buildVotingList = () => {
+            const list = document.getElementById('voting-list');
+            list.innerHTML = '';
+            gameState.players.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'voting-item';
+                item.innerHTML = `
+                    <div class="p-num">اللاعب</div>
+                    <div class="p-name">${p.id}</div>
+                `;
+                item.onclick = () => {
+                    document.querySelectorAll('.voting-item').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    gameState.votedOutId = p.id;
+                    document.getElementById('confirm-vote-btn').classList.remove('hidden');
+                    playSfx('click');
+                };
+                list.appendChild(item);
+            });
+        };
+
+        const showVotingReveal = () => {
+            const votedPlayer = gameState.players.find(p => p.id === gameState.votedOutId);
+            const titleEl = document.getElementById('voting-result-title');
+            const textEl = document.getElementById('voting-result-text');
+
+            showScreen('screen-voting-reveal');
+
+            if (votedPlayer.role === 'imposter') {
+                titleEl.innerText = "تم طرد المحتال!";
+                titleEl.style.color = "var(--primary-light)";
+                textEl.innerText = "نجح المواطنون في اكتشاف المحتال.";
+                vibrate([100, 50, 100]);
+            } else {
+                titleEl.innerText = "طرد خاطئ!";
+                titleEl.style.color = "var(--secondary)";
+                textEl.innerText = "اللاعب المطرود كان مواطناً (أو دوراً آخر). المحتال فاز!";
+                vibrate(500);
+            }
+        };
+
+        const prepareSpyGuessing = () => {
+            const optionsContainer = document.getElementById('spy-word-options');
+            optionsContainer.innerHTML = '';
+            document.getElementById('spy-confirm-btn').disabled = true;
+
+            // Get category words
+            let pool = wordDatabase;
+            // Filter by word type (single vs multi)
+            if (gameState.wordType === 'multi') {
+                pool = pool.filter(w => w.isMulti);
+            } else {
+                pool = pool.filter(w => !w.isMulti);
+            }
+
+            if (gameState.category !== 'all') {
+                pool = pool.filter(w => w.cat === gameState.category);
+            }
+
+            // Pick 11 random words + the correct original word
+            let options = new Set([gameState.originalWord]);
+            while (options.size < Math.min(12, pool.length * 2)) {
+                const pair = pool[Math.floor(Math.random() * pool.length)];
+                options.add(pair.w1);
+                options.add(pair.w2);
+            }
+
+            let finalOptions = Array.from(options).slice(0, 12).sort(() => Math.random() - 0.5);
+
+            finalOptions.forEach(word => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerText = word;
+                chip.onclick = () => {
+                    document.querySelectorAll('#spy-word-options .chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    gameState.spyChoice = word;
+                    document.getElementById('spy-confirm-btn').disabled = false;
+                    playSfx('click');
+                };
+                optionsContainer.appendChild(chip);
+            });
+            showScreen('screen-spy-guess');
+        };
+
+        const showResults = () => {
+            showScreen('screen-results');
+            document.getElementById('res-original-word').innerText = gameState.originalWord;
+
+            const fakeWordGroup = document.getElementById('res-fake-word-group');
+            if (gameState.mode === 'hard') {
+                document.getElementById('res-fake-word').innerText = gameState.fakeWord;
+                fakeWordGroup.style.display = 'block';
+            } else {
+                fakeWordGroup.style.display = 'none';
+            }
+
+            const votedPlayer = gameState.players.find(p => p.id === gameState.votedOutId);
+            let imposterCaught = (votedPlayer && votedPlayer.role === 'imposter');
+            let spyExists = gameState.players.some(p => p.role === 'spy');
+
+            // Determine winners
+            if (!imposterCaught) {
+                gameState.winnerTitle = "فوز المحتال!";
+                gameState.winnerSubtitle = "لم يتمكن المواطنون من اكتشاف المحتال.";
+            } else if (imposterCaught && spyExists && gameState.spyChoice === gameState.originalWord) {
+                gameState.winnerTitle = "فوز الجاسوس!";
+                gameState.winnerSubtitle = "الجاسوس عرف الكلمة الصحيحة وسرق الفوز!";
+            } else if (imposterCaught && spyExists && gameState.spyChoice !== gameState.originalWord) {
+                gameState.winnerTitle = "فوز المواطنين!";
+                gameState.winnerSubtitle = "تم كشف المحتال، وفشل الجاسوس في تخمين الكلمة.";
+            } else {
+                gameState.winnerTitle = "فوز المواطنين!";
+                gameState.winnerSubtitle = "تم كشف المحتال بنجاح!";
+            }
+
+            document.getElementById('win-title').innerText = gameState.winnerTitle;
+            document.getElementById('win-subtitle').innerText = gameState.winnerSubtitle;
+
+            if (gameState.winnerTitle.includes("المواطنين")) {
+                document.getElementById('win-title').style.color = "var(--primary-light)";
+                playSfx('win');
+            } else if (gameState.winnerTitle.includes("الجاسوس")) {
+                document.getElementById('win-title').style.color = "#10b981";
+                playSfx('win');
+            } else {
+                document.getElementById('win-title').style.color = "var(--secondary)";
+            }
+
+            const list = document.getElementById('results-list');
+            list.innerHTML = '';
+            gameState.players.forEach(p => {
+                const item = document.createElement('div');
+                item.className = `res-item ${p.role === 'imposter' ? 'imposter' : ''}`;
+
+                let roleName = 'مواطن';
+                if (p.role === 'imposter') roleName = 'محتال';
+                if (p.role === 'spy') roleName = 'جاسوس';
+                if (p.role === 'blind') roleName = 'أعمى';
+
+                item.innerHTML = `
+                    <div>
+                        <span class="p-num">اللاعب ${p.id}</span>
+                        <div class="p-name">${roleName}</div>
+                    </div>
+                    <div class="p-wrd">${p.word}</div>
+                `;
+                list.appendChild(item);
+            });
+        };
+
+        const updateTimerDisplay = () => {
+            const timerEl = document.getElementById('discussion-timer');
+            const mins = Math.floor(gameState.discussionTimeRemaining / 60).toString().padStart(2, '0');
+            const secs = (gameState.discussionTimeRemaining % 60).toString().padStart(2, '0');
+            timerEl.innerText = `${mins}:${secs}`;
+
+            if (gameState.discussionTimeRemaining <= 10 && gameState.discussionTimeRemaining > 0) {
+                if (!timerEl.classList.contains('warning')) {
+                    timerEl.classList.add('warning');
+                    timerEl.classList.remove('running');
+                }
+            } else {
+                timerEl.classList.remove('warning');
+            }
+        };
+
+        const returnToHome = () => {
+            playSfx('home');
+            vibrate([50, 50]);
+
+            // Clear any active timers
+            clearTimeout(gameState.revealTimer);
+            clearInterval(gameState.discussionTimerInterval);
+
+            // Reset UI
+            document.getElementById('home-btn').classList.add('hidden');
+            const timerDisplay = document.getElementById('discussion-timer');
+            if (timerDisplay) {
+                timerDisplay.classList.remove('running', 'warning');
+            }
+
+            // Hide the reveal card back if it was flipped
+            const card = document.getElementById('reveal-card');
+            if (card) {
+                card.classList.remove('flipped');
+                const pulseIcon = document.querySelector('.pulse-icon');
+                if (pulseIcon) pulseIcon.style.display = 'flex';
+            }
+
+            // Go back to start screen
+            showScreen('screen-start');
+        };
+
+        // --- Event Listeners ---
+
+        // Setup Screen
+        document.getElementById('time-slider').addEventListener('input', (e) => {
+            gameState.discussionTime = parseInt(e.target.value);
+            document.getElementById('time-value').innerText = e.target.value + 'ث';
+        });
+
+        document.getElementById('players-slider').addEventListener('input', (e) => {
+            gameState.numPlayers = e.target.value;
+            document.getElementById('players-value').innerText = e.target.value;
+            const impSlider = document.getElementById('imposters-slider');
+            impSlider.max = Math.max(1, gameState.numPlayers - 1);
+            if (parseInt(impSlider.value) > impSlider.max) {
+                impSlider.value = impSlider.max;
+                document.getElementById('imposters-value').innerText = impSlider.value;
+            }
+        });
+
+        document.getElementById('imposters-slider').addEventListener('input', (e) => {
+            gameState.numImposters = e.target.value;
+            document.getElementById('imposters-value').innerText = e.target.value;
+        });
+
+        document.querySelectorAll('[data-mode]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                gameState.mode = btn.getAttribute('data-mode');
+                playSfx('click');
+            });
+        });
+
+        const updateCategoryChips = () => {
+            const selector = document.getElementById('category-selector');
+            if (!selector) return;
+            selector.innerHTML = '';
+
+            let cats = [];
+            if (gameState.wordType === 'single') {
+                cats = ['all', 'food', 'animals', 'objects', 'sports', 'funny', 'body', 'places', 'jobs'];
+            } else {
+                cats = ['all', 'body_desc', 'food_desc', 'actions_desc', 'places_desc', 'objects_desc'];
+            }
+
+            cats.forEach(cat => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                // Reset category to 'all' if the current category is not in the new list
+                if (gameState.category === cat) {
+                    chip.classList.add('active');
+                } else if (cat === 'all' && !cats.includes(gameState.category)) {
+                    chip.classList.add('active');
+                    gameState.category = 'all';
+                }
+
+                chip.setAttribute('data-cat', cat);
+                chip.innerText = categoryNames[cat] || cat;
+                chip.onclick = () => {
+                    document.querySelectorAll('#category-selector .chip').forEach(b => b.classList.remove('active'));
+                    chip.classList.add('active');
+                    gameState.category = cat;
+                    playSfx('click');
+                };
+                selector.appendChild(chip);
+            });
+        };
+
+        // Initialize category chips
+        updateCategoryChips();
+
+        document.querySelectorAll('#word-type-selector .chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#word-type-selector .chip').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                gameState.wordType = btn.getAttribute('data-type');
+                playSfx('click');
+                updateCategoryChips();
+            });
+        });
+
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            playSfx('click');
+            vibrate(100);
+            initGame();
+        });
+
+        // Player Grid Screen
+        document.getElementById('all-revealed-btn').addEventListener('click', () => {
+            playSfx('click');
+            startStarterSelection();
+        });
+
+        // Reveal Screen
+        const resetRevealScreen = () => {
+            clearTimeout(gameState.revealTimer);
+            document.getElementById('reveal-card').classList.remove('flipped');
+            document.getElementById('role-category').innerText = '';
+            document.getElementById('role-initial-text').innerText = "اضغط للقلب";
+            document.getElementById('reveal-instruction').innerText = "انقر للقلب والكشف عن دورك";
+            document.getElementById('done-reveal-btn').classList.add('hidden');
+
+            // Re-show front pulse icon
+            const pulseIcon = document.querySelector('.pulse-icon');
+            if (pulseIcon) pulseIcon.style.display = 'flex';
+        };
+
+        document.getElementById('reveal-card').addEventListener('click', () => {
+            const card = document.getElementById('reveal-card');
+            if (card.classList.contains('flipped')) return; // already revealed
+
+            // Hide the pulse icon on the front
+            const pulseIcon = document.querySelector('.pulse-icon');
+            if (pulseIcon) pulseIcon.style.display = 'none';
+
+            // Flip the card
+            card.classList.add('flipped');
+
+            const player = gameState.players[gameState.currentPlayerIdx];
+            const wordEl = document.getElementById('role-word');
+            const catEl = document.getElementById('role-category');
+            const subEl = document.getElementById('role-subtext');
+
+            const pair = wordDatabase.find(p => p.w1 === gameState.originalWord || p.w2 === gameState.originalWord);
+            catEl.innerText = `${categoryNames[pair.cat] || 'عام'}`;
+
+            wordEl.className = 'role-word word-anim';
+            const descEl = document.getElementById('role-word-desc');
+            if (descEl) {
+                descEl.innerText = '';
+                descEl.style.display = 'none';
+            }
+
+            if (player.role === 'imposter' && gameState.mode === 'classic') {
+                wordEl.classList.add('imposter-text');
+                vibrate([50, 50, 50]);
+            } else if (player.role === 'spy') {
+                wordEl.classList.add('spy-text');
+                vibrate([100, 50]);
+            } else if (player.role === 'blind') {
+                wordEl.classList.add('blind-text');
+                vibrate(50);
+            } else {
+                vibrate(50);
+                if (descEl) {
+                    if (pair.w1 === player.word) {
+                        descEl.innerText = pair.d1;
+                        descEl.style.display = 'block';
+                    } else if (pair.w2 === player.word) {
+                        descEl.innerText = pair.d2;
+                        descEl.style.display = 'block';
+                    }
+                }
+            }
+
+            wordEl.innerText = player.word;
+            if (player.subtext) {
+                subEl.innerText = player.subtext;
+                subEl.style.display = 'block';
+            } else {
+                subEl.style.display = 'none';
+            }
+
+            playSfx('reveal');
+
+            // Show the next button
+            document.getElementById('done-reveal-btn').classList.remove('hidden');
+
+            // Auto Hide Anti-Cheat (increased to 10s for more comfort, or until manual exit)
+            clearTimeout(gameState.revealTimer);
+            gameState.revealTimer = setTimeout(() => {
+                if (card.classList.contains('flipped')) {
+                    card.classList.remove('flipped');
+                    document.getElementById('role-initial-text').innerText = "تم الإخفاء";
+                    document.getElementById('reveal-instruction').innerText = "انتهى الوقت";
+                }
+            }, 10000);
+        });
+
+        document.getElementById('done-reveal-btn').addEventListener('click', () => {
+            playSfx('click');
+            nextPlayer();
+        });
+
+        // Game/Voting
+        document.getElementById('start-timer-btn').addEventListener('click', () => {
+            playSfx('submit');
+
+            const timerDisplay = document.getElementById('discussion-timer');
+            timerDisplay.classList.add('running');
+            document.getElementById('start-timer-btn').disabled = true;
+            document.getElementById('stop-timer-btn').disabled = false;
+
+            clearInterval(gameState.discussionTimerInterval);
+
+            gameState.discussionTimerInterval = setInterval(() => {
+                gameState.discussionTimeRemaining--;
+                updateTimerDisplay();
+
+                if (gameState.discussionTimeRemaining > 0 && gameState.discussionTimeRemaining <= 10) {
+                    playSfx('tick');
+                }
+
+                if (gameState.discussionTimeRemaining <= 0) {
+                    clearInterval(gameState.discussionTimerInterval);
+                    playSfx('timeout');
+                    vibrate([200, 100, 200]);
+                    timerDisplay.classList.remove('running', 'warning');
+                    document.getElementById('start-timer-btn').disabled = false;
+                    document.getElementById('stop-timer-btn').disabled = true;
+                }
+            }, 1000);
+        });
+
+        document.getElementById('stop-timer-btn').addEventListener('click', () => {
+            playSfx('click');
+            clearInterval(gameState.discussionTimerInterval);
+            document.getElementById('start-timer-btn').disabled = false;
+            document.getElementById('stop-timer-btn').disabled = true;
+            document.getElementById('discussion-timer').classList.remove('running', 'warning');
+        });
+
+        document.getElementById('start-voting-btn').addEventListener('click', () => {
+            playSfx('click');
+            clearInterval(gameState.discussionTimerInterval); // Stop timer before leaving
+            buildVotingList();
+            showScreen('screen-voting');
+        });
+
+        document.getElementById('confirm-vote-btn').addEventListener('click', () => {
+            playSfx('click');
+            showVotingReveal();
+        });
+
+        document.getElementById('next-phase-btn').addEventListener('click', () => {
+            playSfx('click');
+            const votedPlayer = gameState.players.find(p => p.id === gameState.votedOutId);
+            const spyExists = gameState.players.some(p => p.role === 'spy');
+
+            if (votedPlayer.role === 'imposter' && spyExists) {
+                prepareSpyGuessing();
+            } else {
+                showResults();
+            }
+        });
+
+        // Spy Guessing
+        document.getElementById('spy-confirm-btn').addEventListener('click', () => {
+            playSfx('click');
+            showResults();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            playSfx('click');
+            document.getElementById('home-btn').classList.add('hidden');
+            showScreen('screen-start');
+        });
+
+        document.getElementById('start-discussion-btn').addEventListener('click', () => {
+            playSfx('click');
+            showScreen('screen-game');
+            document.getElementById('game-word-hint').innerText = (gameState.mode === 'classic') ? '؟؟؟؟' : 'تشابه الكلمات';
+
+            // Reset timer UI for discussion screen
+            clearInterval(gameState.discussionTimerInterval);
+            gameState.discussionTimeRemaining = gameState.discussionTime;
+            updateTimerDisplay();
+            document.getElementById('start-timer-btn').disabled = false;
+            document.getElementById('stop-timer-btn').disabled = true;
+            const timerDisplay = document.getElementById('discussion-timer');
+            timerDisplay.classList.remove('running', 'warning');
+        });
+
+        document.getElementById('home-btn').addEventListener('click', returnToHome);
+
+    </script>
+</body>
+
+</html>
